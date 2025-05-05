@@ -1,5 +1,3 @@
-// src/lib/api.js
-
 /**
  * Fetch JSON from a relative `/api/...` path.
  * Errors if status is not OK.
@@ -27,10 +25,12 @@ export function getAALProvinsiData(provinsi) {
 
 // Provinsi & Kota
 export function getProvinsi() {
-    return fetchJSON('/api/provinsi')
+    return fetchJSON('/api/hsbgn/provinsi')
 }
 export function getKota(provinsi) {
-    return fetchJSON(`/api/kota?provinsi=${encodeURIComponent(provinsi)}`)
+    return fetchJSON(
+        `/api/hsbgn/provinsi/${encodeURIComponent(provinsi)}/kota`
+    )
 }
 
 // Gedung Direct Loss
@@ -69,7 +69,8 @@ export function getBuildingKota(provinsi) {
     )
 }
 export function uploadBuildingsCSV(file) {
-    let fd = new FormData(); fd.append('file', file)
+    let fd = new FormData()
+    fd.append('file', file)
     return fetchJSON('/api/bangunan/upload', { method: 'POST', body: fd })
 }
 export function getBuildings(params) {
