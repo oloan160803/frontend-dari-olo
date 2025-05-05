@@ -1,4 +1,4 @@
-// components/ui/Select.js cukiii
+// components/ui/Select.js
 export default function Select({
   id,
   value,
