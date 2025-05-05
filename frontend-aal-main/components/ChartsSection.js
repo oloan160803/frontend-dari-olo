@@ -76,7 +76,7 @@ const chartOptions = {
       borderRadius: 8,
       borderSkipped: false,
       barPercentage: 1,
-      categoryPercentage: 1
+      categoryPercentage: 0.1
     }
   }
 };
@@ -91,9 +91,9 @@ export default function ChartsSection({ provs, data, load }) {
             onChange={e => load(e.target.value)}
             defaultValue=""
           >
-            <option value="" disabled>Pilih Provinsi</option>
-            {provs.map(p => (
-              <option key={p} value={p}>{p}</option>
+            <option key="default" value="" disabled>Pilih Provinsi</option>
+            {provs.map((p, index) => (
+              <option key={`prov-${index}-${p}`} value={p}>{p}</option>
             ))}
           </select>
         </div>

@@ -73,7 +73,7 @@ export default function Home() {
 
         {/* Charts Section */}
         <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">AAL per Provinsi</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Analytics Dashboard</h2>
           <ChartsSection provs={provs} data={data} load={load} />
         </section>
 
