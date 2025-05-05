@@ -18,13 +18,17 @@ export default function Select({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
     >
-      <option value="">{placeholder}</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
+      <option key="default" value="">{placeholder}</option>
+      {options.map((opt, index) => {
+        // Handle both string and object options
+        const value = typeof opt === 'object' ? opt.value : opt;
+        const label = typeof opt === 'object' ? opt.label : opt;
+        return (
+          <option key={`${id}-${index}-${value}`} value={value}>
+            {label}
+          </option>
+        );
+      })}
     </select>
   );
 }
-  
