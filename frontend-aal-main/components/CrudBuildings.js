@@ -63,15 +63,22 @@ export default function CrudBuildings() {
   }
 
   async function openEdit(id) {
-    const b = await getBuilding(id)
-    setEditing(b)
-    setModalMode('edit')
+    try {
+      const b = await getBuilding(id)
+      setEditing(b)
+      setModalMode('edit')
+    } catch (error) {
+      console.error('Error loading building:', error)
+      // Handle error appropriately
+    }
   }
 
   async function onSaveEdit(data) {
     await updateBuilding(editing.id_bangunan, data)
     setModalMode('')
     setEditing(null)
+    // Refresh data
+    getBuildings({ provinsi: provFilter, kota: kotaFilter, nama: search }).then(setRows)
   }
 
   async function onAdd(data) {
@@ -337,6 +344,19 @@ function EditForm({ initial, onSave }) {
           />
         </div>
       ))}
+      <div>
+        <label className="block text-sm font-semibold">TAXONOMY</label>
+        <select
+          value={data.taxonomy}
+          onChange={(e) => setData((d) => ({ ...d, taxonomy: e.target.value }))}
+          className="border p-2 w-full rounded-lg"
+        >
+          <option value="CR">CR</option>
+          <option value="MCF">MCF</option>
+          <option value="MUR">MUR</option>
+          <option value="LightWood">LightWood</option>
+        </select>
+      </div>
       <div className="flex justify-end gap-4 mt-4">
         <Button
           onClick={() => onSave({
