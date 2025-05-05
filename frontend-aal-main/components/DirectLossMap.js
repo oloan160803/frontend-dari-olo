@@ -115,6 +115,6 @@ export default function DirectLossMap({ geojson, filters, search }) {
   return (
     <div className="relative h-full">
       <div id="mapGedung" ref={mapEl} className="h-full w-full rounded-lg" />
-      </div>
+    </div>
   )
 }
