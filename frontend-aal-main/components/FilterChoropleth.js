@@ -35,7 +35,7 @@ export default function FilterChoropleth({
   };
 
   return (
-    <div className="bg-white/80 border border-gray-200 rounded-lg px-2 py-1 mb-2">
+    <div className="rounded-lg p-2">
       <div className="flex flex-col md:flex-row gap-2 items-center">
         <Select
           id="hazardSelect"
@@ -45,7 +45,8 @@ export default function FilterChoropleth({
             value: key,
             label: hazardLabels[key]
           }))}
-          className="w-full md:w-40"
+          placeholder="Pilih Bencana"
+          className="w-64 md:w"
         />
         <Select
           id="periodSelect"
@@ -55,8 +56,9 @@ export default function FilterChoropleth({
             value: p,
             label: `${p} tahun`
           })) : []}
+          placeholder="Pilih Return Period"
           disabled={!hazard}
-          className="w-full md:w-40"
+          className="w-64 md:w"
         />
         <Select
           id="modelSelect"
@@ -66,8 +68,9 @@ export default function FilterChoropleth({
             value: m,
             label: modelLabels[m]
           }))}
+          placeholder="Pilih Jenis Bangunan"
           disabled={!period}
-          className="w-full md:w-40"
+          className="w-64 md:w"
         />
       </div>
     </div>

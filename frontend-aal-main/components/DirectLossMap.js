@@ -1,26 +1,26 @@
 import { useState, useRef, useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 
 const icons = {
   BMN: L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [12, 20],
+    iconUrl: 'icons/office-building-svgrepo-com.svg',
+    iconSize: [20, 20],
     iconAnchor: [6, 20],
     popupAnchor: [0, -20]
   }),
   FS: L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [12, 20],
+    iconUrl: 'icons/hospital-svgrepo-com.svg',
+    iconSize: [20, 20],
     iconAnchor: [6, 20],
     popupAnchor: [0, -20]
   }),
   FD: L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [12, 20],
+    iconUrl: 'icons/school-sharp-svgrepo-com.svg',
+    iconSize: [20, 20],
     iconAnchor: [6, 20],
     popupAnchor: [0, -20]
   })
@@ -29,27 +29,33 @@ const icons = {
 export default function DirectLossMap({ geojson, filters, search }) {
   const mapEl = useRef(null)
   const mapRef = useRef(null)
-  const featureGroupRef = useRef(null)
+  const clusterRef = useRef(null)
 
   // Format Rupiah
   const formatRupiah = (num) =>
     'Rp ' + Number(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 
   useEffect(() => {
+    if (mapRef.current) return
     mapRef.current = L.map(mapEl.current, { zoomControl: false }).setView([-8.9, 116.4], 5)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(mapRef.current)
 
-    featureGroupRef.current = L.featureGroup().addTo(mapRef.current)
-    L.control.zoom({ position: 'topright' }).addTo(mapRef.current)
+   clusterRef.current = L.markerClusterGroup({
+     spiderfyOnMaxZoom: true,
+     showCoverageOnHover: false,
+     maxClusterRadius: 50
+   }).addTo(mapRef.current)
   }, [])
 
   useEffect(() => {
-    const fg = featureGroupRef.current
-    fg.clearLayers()
+
+   const cluster = clusterRef.current
+   cluster.clearLayers()
 
     if (!geojson) return
 
-    const items = geojson.features.map((f) => {
+
+   const items = geojson.features.map((f) => {
       const p = f.properties
       const [lon, lat] = f.geometry.coordinates
       const type = (p.id_bangunan || '').split('_')[0]
@@ -93,6 +99,7 @@ export default function DirectLossMap({ geojson, filters, search }) {
         </div>
       `
 
+
       const marker = L.marker([lat, lon], { icon: icons[type] || icons.FD })
         .bindPopup(popup)
         .bindTooltip(p.nama_gedung, {
@@ -102,13 +109,13 @@ export default function DirectLossMap({ geojson, filters, search }) {
           className: 'building-label'
         })
 
-      return { marker, name: p.nama_gedung, type }
+      return marker
     }).filter(Boolean)
 
-    items.forEach((item) => fg.addLayer(item.marker))
+   items.forEach(marker => cluster.addLayer(marker))
 
     // Fit to markers
-    const bounds = fg.getBounds()
+   const bounds = cluster.getBounds()
     if (bounds.isValid()) mapRef.current.fitBounds(bounds, { maxZoom: 14 })
   }, [geojson, filters, search])
 

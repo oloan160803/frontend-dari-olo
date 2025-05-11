@@ -9,10 +9,11 @@ export default function Select({
   className = ''
 }) {
   return (
+  <div className="relative">  
     <select
       id={id}
-      className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-        disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+      className={`w-64 px-4 py-2 rounded-4xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black appearance-none ${
+        disabled ? 'bg-[#C6FF00] cursor-not-allowed' : 'bg-[#C6FF00]'
       } ${className}`}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -30,5 +31,6 @@ export default function Select({
         );
       })}
     </select>
+  </div>
   );
 }

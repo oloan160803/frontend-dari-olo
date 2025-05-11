@@ -1,111 +1,84 @@
 // pages/index.js
-import dynamic from 'next/dynamic'
-import { useState } from 'react'
-
-// Hooks (moved to top-level hooks/)
-import useAALProvinsi from '../hooks/useAALProvinsi'
-import useChartData   from '../hooks/useChartData'
-import useDirectLoss  from '../hooks/useDirectLoss'
-
-// Components
-import Header            from '../components/Header'
-import FilterChoropleth  from '../components/FilterChoropleth'
-const ChoroplethMap     = dynamic(() => import('../components/ChoroplethMap'), { ssr: false })
-
-import ChartsSection     from '../components/ChartsSection'
-import FilterDirectLoss  from '../components/FilterDirectLoss'
-const DirectLossMap     = dynamic(() => import('../components/DirectLossMap'), { ssr: false })
-
-import CrudHSBGN         from '../components/CrudHSBGN'
-import CrudBuildings     from '../components/CrudBuildings'
-import LegendAAL         from '../components/LegendAAL'
+import Header from '../components/Header'
+import Image from 'next/image'
+import { Facebook, Instagram, Twitter, Globe } from "lucide-react";
 
 export default function Home() {
-  // Choropleth state
-  const [hazard, setHazard] = useState('')
-  const [period, setPeriod] = useState('')
-  const [model, setModel]   = useState('')
-  const { geojson }         = useAALProvinsi()
-
-  // Charts state
-  const { provs, data, load } = useChartData()
-
-  // Direct Loss state
-  const direct = useDirectLoss()
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen text-gray-200">
       <Header />
 
-      <main className="container mx-auto px-4 py-8 space-y-12">
-        {/* Choropleth Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Average Annual Loss di Indonesia</h2>
-          <button
-            type="button"
-            className="mb-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            onClick={() => {
-              window.open('/api/aal-provinsi/download', '_blank');
-            }}
-          >
-            Download AAL CSV
-          </button>
-          <div className="space-y-6">
-            <FilterChoropleth
-              hazard={hazard}
-              setHazard={setHazard}
-              period={period}
-              setPeriod={setPeriod}
-              model={model}
-              setModel={setModel}
-            />
-            <div className="h-[500px] rounded-lg overflow-hidden">
-              <ChoroplethMap
-                geojson={geojson}
-                hazard={hazard}
-                period={period}
-                model={model}
-              />
+      {/* Main content pushed below fixed header */}
+      <main className="pt-25 relative h-screen flex flex-col">
+        {/* Background wrapper */}
+        <div className="absolute inset-0 h-full w-full -z-10">
+          <Image
+            src="/coverbangunan.svg"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-[#0D0F12]/80" />
+        </div>
+
+        {/* Hero & CTA */}
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div className="max-w-2xl text-center space-y-6">
+            <h1 className="text-4xl md:text-6xl font-semibold text-white font-[SF Pro]">
+              Selamat datang di CardinAAL
+            </h1>
+            <div className="space-y-4">
+              <p className="text-lg text-gray-300 font-[SF Pro]">
+                CardinAAL adalah platform yang dirancang untuk membantu menghitung kerugian tahunan rata-rata (AAL) dan kerugian langsung (Direct Loss) akibat bencana alam di Indonesia.
+              </p>
+              <p className="text-lg text-gray-300 font-[SF Pro] italic">
+                "Menghitung kerugian tahunan guna menyusun strategi mitigasi bencana yang baik."
+              </p>
             </div>
-            <LegendAAL geojson={geojson} hazard={hazard} period={period} model={model} />
-          </div>
-        </section>
-
-        {/* Charts Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Analytics Dashboard</h2>
-          <ChartsSection provs={provs} data={data} load={load} />
-        </section>
-
-        {/* Direct Loss Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Direct Loss Analysis</h2>
-          <div className="space-y-6">
-            <FilterDirectLoss {...direct} />
-            <div className="h-[500px] rounded-lg overflow-hidden">
-              <DirectLossMap
-                geojson={direct.geojson}
-                filters={direct.filters}
-                search={direct.search}
-              />
+            <div className="flex flex-wrap justify-center gap-4">
+              <a
+                href="/calculation"
+                className="px-6 py-3 bg-[#1fdfc2] text-black rounded-full font-[SF Pro] hover:bg-[#A8D600] transition"
+              >
+                Mulai Perhitungan
+              </a>
+              <a
+                href="/data"
+                className="px-6 py-3 border border-gray-500 text-gray-300 rounded-full font-[SF Pro] hover:border-white hover:text-white transition"
+              >
+                Lihat Data
+              </a>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* CRUD Tables Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Data Management</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">HSBGN Data</h3>
-              <CrudHSBGN />
+        {/* Footer-like info */}
+        <div className="py-6">
+          <div className="max-w-4xl mx-auto text-center space-y-6 px-4">
+
+            {/* Ikon sosial */}
+            <div className="flex justify-center gap-6">
+              <a href="https://www.facebook.com/oloan.yesm/" className="hover:text-white transition" aria-label="Facebook">
+                <Facebook size={24} />
+              </a>
+              <a href="https://www.instagram.com/bintang_maull" className="hover:text-white transition" aria-label="Instagram">
+                <Instagram size={24} />
+              </a>
+              <a href="https://x.com/apparentlyrtten" className="hover:text-white transition" aria-label="Twitter">
+                <Twitter size={24} />
+              </a>
+              <a href="https://www.linkedin.com/in/celinedeandra" className="hover:text-white transition" aria-label="Website">
+                <Globe size={24} />
+              </a>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">Buildings Data</h3>
-              <CrudBuildings />
-            </div>
+
+            {/* Hak cipta */}
+            <p className="text-xs text-gray-500">
+              © {new Date().getFullYear()} CardinAAL. Semua hak dilindungi.
+            </p>
           </div>
-        </section>
+        </div>
       </main>
     </div>
   )

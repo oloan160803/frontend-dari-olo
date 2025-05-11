@@ -144,3 +144,7 @@ async function fetchJSON(path, opts = {}) {
     }
   }
   
+  // kurva
+  export function getDisasterCurves() {
+    return fetchJSON('/api/disaster-curves')
+  }

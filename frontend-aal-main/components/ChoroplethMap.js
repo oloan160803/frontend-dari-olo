@@ -1,78 +1,160 @@
 // components/ChoroplethMap.js
-import { useRef, useEffect } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useRef, useEffect } from 'react'
 
-const colors = ['#d73027', '#fc8d59', '#fee08b', '#d9ef8b', '#1a9850'];
+// Muat Leaflet hanya di client-side
+let L
+if (typeof window !== 'undefined') {
+  L = require('leaflet')
+  require('leaflet/dist/leaflet.css')
+}
+
+const colors = ['#fcfdbf', '#fb8761', '#b6367a', '#50127b', '#000004']
+
+// Fungsi Jenks Natural Breaks untuk membagi data ke n_classes
+function jenks(data, n_classes) {
+  if (!Array.isArray(data) || data.length === 0) return []
+  const sorted = data.slice().sort((a, b) => a - b)
+  const matrices = Array(sorted.length + 1).fill(0)
+    .map(() => Array(n_classes + 1).fill(0))
+  const variances = Array(sorted.length + 1).fill(0)
+    .map(() => Array(n_classes + 1).fill(Infinity))
+
+  for (let i = 1; i <= n_classes; i++) {
+    matrices[0][i] = 1
+    variances[0][i] = 0
+  }
+  for (let l = 1; l <= sorted.length; l++) {
+    let sum = 0, sumSq = 0
+    for (let m = 1; m <= l; m++) {
+      const val = sorted[l - m]
+      sum += val
+      sumSq += val * val
+      const variance = sumSq - (sum * sum) / m
+      for (let k = 2; k <= n_classes; k++) {
+        if (variances[l][k] > variance + variances[l - m][k - 1]) {
+          matrices[l][k] = l - m + 1
+          variances[l][k] = variance + variances[l - m][k - 1]
+        }
+      }
+    }
+    matrices[l][1] = 1
+    variances[l][1] = sumSq - (sum * sum) / l
+  }
+  const kclass = Array(n_classes + 1).fill(0)
+  kclass[n_classes] = sorted[sorted.length - 1]
+  kclass[0] = sorted[0]
+  let count = n_classes, idx = sorted.length
+  while (count > 1) {
+    kclass[count - 1] = sorted[matrices[idx][count] - 2]
+    idx = matrices[idx][count] - 1
+    count--
+  }
+  return kclass
+}
 
 export default function ChoroplethMap({ geojson, hazard, period, model }) {
-  const mapEl = useRef(null);
-  const mapRef = useRef(null);
-  const layerRef = useRef(null);
-  const legendRef = useRef(null);
+  const mapEl = useRef(null)
+  const mapRef = useRef(null)
+  const layerRef = useRef(null)
+  const legendRef = useRef(null)
 
+  // Inisialisasi peta sekali
   useEffect(() => {
-    mapRef.current = L.map(mapEl.current, { zoomControl: false }).setView([-2.5, 118], 5);
+    if (!L || mapRef.current) return
+    // Buat map dengan default center & zoom sementara
+    mapRef.current = L.map(mapEl.current, {
+      zoomControl: false,
+      minZoom: 5,
+      maxZoom: 7
+    })
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OSM'
-    }).addTo(mapRef.current);
-    L.control.zoom({ position: 'topright' }).addTo(mapRef.current);
-    return () => mapRef.current.remove();
-  }, []);
+    }).addTo(mapRef.current)
+  }, [])
 
+  // Fit map to full GeoJSON bounds as soon as data loads
   useEffect(() => {
-    if (!geojson || !hazard || !period || !model) return;
+    const map = mapRef.current
+    if (!map || !geojson) return
+    const tempLayer = L.geoJSON(geojson)
+    const fullBounds = tempLayer.getBounds()
+    map.fitBounds(fullBounds, { padding: [20, 20] })
+    map.setMaxBounds(fullBounds)
+  }, [geojson])
 
-    // clear old
-    if (layerRef.current) {
-      mapRef.current.removeLayer(layerRef.current);
-      mapRef.current.removeControl(legendRef.current);
+  // Render choropleth + popup + legend setiap data berubah
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !geojson || !hazard || !period || !model) return
+
+    // Hapus layer & legend lama
+    if (layerRef.current) layerRef.current.remove()
+    if (legendRef.current) map.removeControl(legendRef.current)
+
+    // siapkan Jenks pada data geojson
+    const metric = `aal_${hazard}_${period}_${model === 'total' ? 'total' : model}`
+    const vals = geojson.features.map(f => f.properties[metric] || 0)
+    const grades = jenks(vals, 5).sort((a, b) => a - b)
+
+    // helper format popup dan legend
+    const fmtPopup = n => n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
+    const fmtLegend = n => {
+      if (n >= 1e12) return Math.round(n / 1e12) + 'T'
+      if (n >= 1e9)  return Math.round(n / 1e9) + 'M'
+      if (n >= 1e6)  return Math.round(n / 1e6) + 'JT'
+      return n.toLocaleString('id-ID')
+    }
+    const getColor = v => {
+      for (let i = 0; i < grades.length - 1; i++) {
+        if (v >= grades[i] && v < grades[i + 1]) return colors[i]
+      }
+      return colors[colors.length - 1]
     }
 
-    // build breaks
-    const metric = `aal_${hazard}_${period}_${model === 'total' ? 'total' : model}`;
-    const vals = geojson.features.map(f => f.properties[metric] || 0);
-    const min = Math.min(...vals), max = Math.max(...vals);
-    const breaks = [
-      min + (max - min) * 0.2,
-      min + (max - min) * 0.4,
-      min + (max - min) * 0.6,
-      min + (max - min) * 0.8
-    ];
-
+    // Tambah layer choropleth dengan popup
     layerRef.current = L.geoJSON(geojson, {
-      style: feature => {
-        const v = feature.properties[metric] || 0;
-        let c = colors[0];
-        for (let i = breaks.length - 1; i >= 0; i--) {
-          if (v >= breaks[i]) {
-            c = colors[i + 1];
-            break;
-          }
-        }
-        return { fillColor: c, weight: 1, color: '#fff', fillOpacity: 0.7 };
+      interactive: true,
+      style: feature => ({
+        fillColor: getColor(feature.properties[metric] || 0),
+        weight: 1,
+        color: '#fff',
+        fillOpacity: 0.7
+      }),
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties
+        const prov = props.provinsi || props.nama_provinsi || 'Unknown'
+        const val = props[metric] || 0
+        layer.bindPopup(`<strong>${prov}</strong><br/>AAL: ${fmtPopup(val)}`)
       }
-    }).addTo(mapRef.current);
+    }).addTo(map)
 
-    // legend
-    legendRef.current = L.control({ position: 'bottomright' });
+    // Tambah legend di pojok kiri bawah
+    legendRef.current = L.control({ position: 'bottomleft' })
     legendRef.current.onAdd = () => {
-      const div = L.DomUtil.create('div', 'info legend');
-      const grades = [min, ...breaks, max];
-      let html = '';
-      for (let i = 0; i < grades.length - 1; i++) {
-        html +=
-          `<i style="background:${colors[i]}"></i> ` +
-          `${Math.round(grades[i]).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits:0 })}` +
-          ' – ' +
-          `${Math.round(grades[i + 1]).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits:0 })}` +
-          '<br>';
-      }
-      div.innerHTML = html;
-      return div;
-    };
-    legendRef.current.addTo(mapRef.current);
-  }, [geojson, hazard, period, model]);
+      const div = L.DomUtil.create('div', 'info legend')
+      div.style.background = 'rgba(255,255,255,0.9)'
+      div.style.padding = '8px'
+      div.style.borderRadius = '4px'
+      div.style.color = '#000'
+      div.style.fontFamily = 'sans-serif'
+      div.style.lineHeight = '1.5em'
+      div.innerHTML = '<strong>Average Annual Loss (Rp)</strong><br/>'
+      grades.forEach((g, i) => {
+        if (i < grades.length - 1) {
+          div.innerHTML +=
+            `<i style="background:${colors[i]};width:18px;height:12px;display:inline-block;margin-right:6px;border:1px solid #ccc"></i>` +
+            ` ${fmtLegend(grades[i])} – ${fmtLegend(grades[i+1])}<br/>`
+        }
+      })
+      return div
+    }
+    legendRef.current.addTo(map)
+    const lc = legendRef.current.getContainer()
+    if (lc) {
+      lc.style.bottom = '20px'   // naikkan 30px dari bottom
+      lc.style.left   = '20px'   // geser 30px dari kiri
+    }
+  }, [geojson, hazard, period, model])
 
-  return <div id="map" ref={mapEl} className="h-[90vh] w-full" />;
+  return <div ref={mapEl} id="map" className="h-[480px] w-full rounded-lg" />
 }

@@ -1,5 +1,4 @@
 // components/LegendAAL.js
-// Balik urutan warna agar nilai kecil hijau, besar merah
 const colors = ['#1a9850', '#d9ef8b', '#fee08b', '#fc8d59', '#d73027', '#7f0000'];
 
 // Fungsi Jenks Natural Breaks (5 atau 6 kelas)
@@ -54,8 +53,8 @@ export default function LegendAAL({ geojson, hazard, period, model }) {
   if (!hazard || !period || !model) return null;
   if (!geojson || !geojson.features || geojson.features.length === 0) {
     return (
-      <div className="flex flex-col items-start mt-4">
-        <div className="bg-white/90 border border-gray-200 rounded-lg shadow px-4 py-3">
+      <div className="absolute top-2 left-2 z-50 opacity-75 pointer-events-none">
+        <div className="bg-white border border-gray-200 rounded-lg shadow px-4 py-3">
           <div className="font-semibold text-gray-700 mb-2">Legenda Nilai Kerugian (Rupiah)</div>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -83,14 +82,17 @@ export default function LegendAAL({ geojson, hazard, period, model }) {
       <div className="bg-white/90 border border-gray-200 rounded-lg shadow px-4 py-3">
         <div className="font-semibold text-gray-700 mb-2">Average Annual Loss (Rupiah)</div>
         <div className="flex flex-col gap-1">
-          {Array.from({ length: nClass }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="inline-block w-6 h-4 rounded" style={{ background: colors[i], border: '1px solid #ccc' }} />
-              <span className="text-sm text-gray-700">
-                {`Rp ${Math.round(grades[i]).toLocaleString('id-ID')}`} – {`Rp ${Math.round(grades[i + 1]).toLocaleString('id-ID')}`}
-              </span>
-            </div>
-          ))}
+          {Array.from({ length: nClass }).map((_, i) => {
+            const low  = Math.ceil(grades[i]   / 1e6);
+            const high = Math.ceil(grades[i+1] / 1e6);
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <span className="inline-block w-6 h-4 rounded" style={{ background: colors[i], border: '1px solid #ccc' }} />
+                <span className="text-sm text-gray-700">
+                  {`Rp ${low}M`} – {`Rp ${high}M`}
+                </span>
+              </div>
+          )})}
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ export default function FilterDirectLoss({
           value={selectedProv}
           onChange={setSelectedProv}
           options={provList}
-          placeholder="— Pilih Provinsi —"
+          placeholder="Pilih Provinsi"
           className="w-64"
         />
         <Select
@@ -26,7 +26,7 @@ export default function FilterDirectLoss({
           onChange={setSelectedKota}
           options={kotaList}
           disabled={!selectedProv}
-          placeholder="— Pilih Kota —"
+          placeholder="Pilih Kota"
           className="w-64"
         />
       </div>
@@ -38,7 +38,7 @@ export default function FilterDirectLoss({
           { key: 'FS', label: 'Fasilitas Kesehatan' },
           { key: 'FD', label: 'Fasilitas Pendidikan' }
         ].map(type => (
-          <label key={type.key} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+          <label key={type.key} className="flex items-center gap-2 text-black px-4 py-2 bg-[#C084FC] rounded-4xl hover:bg-cyan-700 hover:text-black cursor-pointer">
             <input
               type="checkbox"
               checked={filters[type.key]}
@@ -61,7 +61,7 @@ export default function FilterDirectLoss({
         />
         <button
           type="button"
-          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="ml-2 px-4 py-2 bg-[#22D3EE] text-black rounded-4xl hover:bg-[#3B82F6] hover:text-white font-[SF Pro] whitespace-nowrap transition "
           onClick={() => {
             // Ambil filter dari props
             const params = new URLSearchParams();
@@ -74,7 +74,7 @@ export default function FilterDirectLoss({
             window.open(`/api/gedung/download?${params.toString()}`, '_blank');
           }}
         >
-          Download CSV
+          Unduh Data
         </button>
       </div>
     </div>
