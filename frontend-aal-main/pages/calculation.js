@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-// Hooks (moved to top-level hooks/)
+// Hooks
 import useAALProvinsi from '../hooks/useAALProvinsi'
 import useChartData   from '../hooks/useChartData'
 import useDirectLoss  from '../hooks/useDirectLoss'
@@ -21,24 +21,41 @@ export default function Calculation() {
   const [hazard, setHazard] = useState('')
   const [period, setPeriod] = useState('')
   const [model, setModel]   = useState('')
-  const { geojson }         = useAALProvinsi()
+  const { geojson: aalGeojson } = useAALProvinsi()
 
   // Charts state
   const { provs, data, load } = useChartData()
 
   // Direct Loss state
-  const direct = useDirectLoss()
+  // Pastikan useDirectLoss mengembalikan:
+  // provList, kotaList, selectedProv, setSelectedProv,
+  // selectedKota, setSelectedKota, filters, setFilters,
+  // search, setSearch, geojson
+  const {
+    provList,
+    kotaList,
+    selectedProv,
+    setSelectedProv,
+    selectedKota,
+    setSelectedKota,
+    filters,
+    setFilters,
+    search,
+    setSearch,
+    geojson: dlGeojson
+  } = useDirectLoss()
 
   return (
     <div className="min-h-screen bg-[#0D0F12] text-gray-200 shadow-xs shadow-gray-600">
       <Header />
       
       <main className="max-w-screen mx-auto py-10 px-6 space-y-6 mt-18">
-        {/* Top Section: AAL Choropleth Cards */}
+        {/* AAL Choropleth */}
         <section className="w-full">
-          {/* Left Card: Filters, Map & Button */}
           <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
-            <h2 className="text-2xl font-semibold text-white mb-6 font-[SF Pro]">Average Annual Loss di Indonesia</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6 font-[SF Pro]">
+              Average Annual Loss di Indonesia
+            </h2>
             <FilterChoropleth
               hazard={hazard}
               setHazard={setHazard}
@@ -49,7 +66,7 @@ export default function Calculation() {
             />
             <div className="h-[480px] bg-gray-700 rounded-lg overflow-hidden">
               <ChoroplethMap
-                geojson={geojson}
+                geojson={aalGeojson}
                 hazard={hazard}
                 period={period}
                 model={model}
@@ -66,27 +83,43 @@ export default function Calculation() {
           </div>
         </section>
 
-        {/* Charts Section */}
+        {/* AAL Charts */}
         <section className="bg-[#1E2023] rounded-lg shadow-xs p-6 my-7.5 shadow-gray-600">
-          <h2 className="text-2xl font-semibold px-4 text-gray-100 mb-0.5 font-[SF Pro]">Grafik Average Annual Loss Provinsi</h2>
+          <h2 className="text-2xl font-semibold px-4 text-gray-100 mb-0.5 font-[SF Pro]">
+            Grafik Average Annual Loss Provinsi
+          </h2>
           <ChartsSection provs={provs} data={data} load={load} />
         </section>
 
-        {/* Direct Loss Analysis Section */}
+        {/* Direct Loss */}
         <section className="bg-[#1E2023] shadow-xs shadow-gray-600 rounded-lg p-6">
-          <h2 className="text-2xl font-semibold font-[SF Pro] text-white mb-6">Informasi Direct Loss</h2>
+          <h2 className="text-2xl font-semibold font-[SF Pro] text-white mb-6">
+            Informasi Direct Loss
+          </h2>
           <div className="space-y-6">
-            <FilterDirectLoss {...direct} />
+            <FilterDirectLoss
+              provList={provList}
+              kotaList={kotaList}
+              selectedProv={selectedProv}
+              setSelectedProv={setSelectedProv}
+              selectedKota={selectedKota}
+              setSelectedKota={setSelectedKota}
+              filters={filters}
+              setFilters={setFilters}
+              search={search}
+              setSearch={setSearch}
+              geojson={dlGeojson}
+            />
             <div className="h-[480px] bg-gray-700 rounded-lg overflow-hidden">
               <DirectLossMap
-                geojson={direct.geojson}
-                filters={direct.filters}
-                search={direct.search}
+                geojson={dlGeojson}
+                filters={filters}
+                search={search}
               />
             </div>
           </div>
-          </section>
+        </section>
       </main>
     </div>
   )
-}     
+}

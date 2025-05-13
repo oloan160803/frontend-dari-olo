@@ -2,109 +2,57 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-// Hooks (moved to top-level hooks/)
-import useAALProvinsi from '../hooks/useAALProvinsi'
+// Hooks
 import useChartData   from '../hooks/useChartData'
 import useDirectLoss  from '../hooks/useDirectLoss'
 
 // Components
-import Header            from '../components/Header'
-import FilterChoropleth  from '../components/FilterChoropleth'
-const ChoroplethMap     = dynamic(() => import('../components/ChoroplethMap'), { ssr: false })
+import Header           from '../components/Header'
+import CrudHSBGN        from '../components/CrudHSBGN'
 
-import ChartsSection     from '../components/ChartsSection'
-import FilterDirectLoss  from '../components/FilterDirectLoss'
-const DirectLossMap     = dynamic(() => import('../components/DirectLossMap'), { ssr: false })
+// Dynamic Imports
+const HazardMap     = dynamic(() => import('../components/HazardMap'), { ssr: false })
+const DisasterCurves = dynamic(() => import('../components/DisasterCurves'), { ssr: false })
 
-import CrudHSBGN         from '../components/CrudHSBGN'
-import CrudBuildings     from '../components/CrudBuildings'
-import LegendAAL         from '../components/LegendAAL'
 
 export default function Home() {
-  // Choropleth state
-  const [hazard, setHazard] = useState('')
-  const [period, setPeriod] = useState('')
-  const [model, setModel]   = useState('')
-  const { geojson }         = useAALProvinsi()
-
   // Charts state
   const { provs, data, load } = useChartData()
 
   // Direct Loss state
   const direct = useDirectLoss()
 
+  // Lifted filters for buildings
+  const [selectedProv, setSelectedProv] = useState('')
+  const [selectedKota, setSelectedKota] = useState('')
+
   return (
     <div className="min-h-screen bg-[#0D0F12]">
       <Header />
 
-      <main className="container mx-auto px-4 py-8 space-y-12">
-        {/* Choropleth Section */}
-        <section className="bg-[#1E2023] rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Average Annual Loss di Indonesia</h2>
-          <button
-            type="button"
-            className="mb-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            onClick={() => {
-              window.open('/api/aal-provinsi/download', '_blank');
-            }}
-          >
-            Download AAL CSV
-          </button>
-          <div className="space-y-6">
-            <FilterChoropleth
-              hazard={hazard}
-              setHazard={setHazard}
-              period={period}
-              setPeriod={setPeriod}
-              model={model}
-              setModel={setModel}
-            />
-            <div className="h-[500px] rounded-lg overflow-hidden">
-              <ChoroplethMap
-                geojson={geojson}
-                hazard={hazard}
-                period={period}
-                model={model}
-              />
-            </div>
-            <LegendAAL geojson={geojson} hazard={hazard} period={period} model={model} />
-          </div>
+      <main className="container mx-auto py-10 px-6 space-y-6 mt-18">
+        {/* Peta Model Bencana dan Bangunan */}
+        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
+          <h2 className="text-2xl font-bold text-white mb-1">Peta Model Bencana dan Manajemen Data Bangunan</h2>
+          <HazardMap
+            provinsi={selectedProv}
+            kota={selectedKota}
+            setProvinsi={setSelectedProv}
+            setKota={setSelectedKota}
+          />
         </section>
 
-        {/* Charts Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Analytics Dashboard</h2>
-          <ChartsSection provs={provs} data={data} load={load} />
+        {/* Kurva Kerentanan */}
+        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
+          <h2 className="text-2xl font-bold text-white mb-6">Kurva Kerentanan</h2>
+          <DisasterCurves />
         </section>
 
-        {/* Direct Loss Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Direct Loss Analysis</h2>
-          <div className="space-y-6">
-            <FilterDirectLoss {...direct} />
-            <div className="h-[500px] rounded-lg overflow-hidden">
-              <DirectLossMap
-                geojson={direct.geojson}
-                filters={direct.filters}
-                search={direct.search}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* CRUD Tables Section */}
-        <section className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Data Management</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">HSBGN Data</h3>
+        {/* HSBGN */}
+        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600 md:w-1/2 center mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">Manajemen HSBGN</h2>
               <CrudHSBGN />
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">Buildings Data</h3>
-              <CrudBuildings />
-            </div>
-          </div>
+            {/* NOTE: CrudBuildings sudah dipindahkan ke panel Peta Model Bencana */}
         </section>
       </main>
     </div>

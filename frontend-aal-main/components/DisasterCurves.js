@@ -8,7 +8,8 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Ticks
 } from 'chart.js'
 import { getDisasterCurves } from '../src/lib/api' // sesuaikan path
 // register component‐level Chart.js modules
@@ -37,9 +38,9 @@ export default function DisasterCurves() {
     mur:       '#fd7e14',
     mcf:       '#dc3545',
     cr:        '#6f42c1',
-    1:         '#007bff',
-    2:         '#28a745'
-  }
+    '1.0':     '#ffc107',
+    '2.0':     '#dc3545',
+  };
 
   const disasters = [
     { key: 'gempa',        label: 'Gempa' },
@@ -49,7 +50,7 @@ export default function DisasterCurves() {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
       {disasters.map(({ key, label }) => {
         const grouped = rawData[key] || {}
         const taxonomyList =
@@ -63,7 +64,22 @@ export default function DisasterCurves() {
         const datasets = taxonomyList.map(tax => {
           const pts = grouped[tax] || { x: [], y: [] }
           const data = pts.x.map((x, i) => ({ x, y: pts.y[i] }))
-          const labelText = key === 'banjir' ? `Curve ${tax}` : tax
+
+          let labelText;
+          if (key === 'banjir') {
+            labelText = {
+              '1.0': 'Lantai 1',
+              '2.0': 'Lantai 2'
+            }[tax] || `Kurva ${tax}`;
+          } else {
+            labelText = {
+              lightwood: 'Lightwood',
+              mur: 'MUR',
+              mcf: 'MCF',
+              cr: 'CR'
+            }[tax] || tax;
+          }   
+
           return {
             label: labelText,
             data,
@@ -75,20 +91,52 @@ export default function DisasterCurves() {
         })
 
         return (
-          <div key={key} className="bg-white p-4 rounded-lg shadow">
+          <div key={key} className="bg-gray-800 p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">{label}</h2>
             <Line
               data={{ datasets }}
               options={{
                 responsive: true,
-                plugins: { legend: { position: 'top' } },
+                plugins: { legend: { position: 'top', labels: { color: '#ffffff', usePointStyle: true, pointStyle: 'line', padding: 10, font: { size: 13 }, } } },
                 scales: {
-                  x: { type: 'linear', min: 0, max: maxX, title: { display: true, text: 'x' } },
-                  y: { min: 0, max: 1, title: { display: true, text: 'y' } }
+                  x: { 
+                    type: 'linear', 
+                    min: 0, 
+                    max: maxX, 
+                    title: { 
+                      display: true, 
+                      text: 'Intensitas Bencana', 
+                      color: '#ffffff', font: { size: 14 }
+                    } , 
+                    ticks: {
+                      color: '#ffffff',
+                      font: { size: 12 }
+                    },
+                    grid: {
+                      color: '#ffffff'
+                  }
+                },
+                  y: {
+                    min: 0, 
+                    max: 1, 
+                    title: { 
+                      display: true, 
+                      text: 'Tingkat Kerusakan',  
+                      color: '#ffffff',
+                      font: { size: 14 }
+                    },
+                  ticks: {
+                    color: '#ffffff',
+                    font: { size: 12 }
+                  },
+                  grid: {
+                    color: '#ffffff'
+                  }
                 }
-              }}
-            />
-          </div>
+              }
+            }}
+          />
+        </div>
         )
       })}
     </div>

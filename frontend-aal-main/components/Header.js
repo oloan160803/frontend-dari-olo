@@ -37,7 +37,7 @@ export default function Header() {
                 : 'text-gray-200 hover:bg-[#C6FF00] hover:text-black'}
             `}
           >
-            Perhitungan
+            Kalkulasi
           </button>
           <button
             onClick={() => router.push('/data')}
@@ -48,7 +48,7 @@ export default function Header() {
                 : 'text-gray-200 hover:bg-[#C6FF00] hover:text-black'}
             `}
           >
-            Data
+            Model dan Data
             </button>
           <button
             onClick={() => router.push('/about')}
@@ -59,7 +59,7 @@ export default function Header() {
                 : 'text-gray-200 hover:bg-[#C6FF00] hover:text-black'}
             `}
           >
-            Tentang Kami
+            Tentang kami
           </button>
         </nav>
       </div>

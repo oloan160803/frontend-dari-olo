@@ -1,5 +1,5 @@
 // components/CrudBuildings.js
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Select from './ui/Select'
 import Button from './ui/Button'
 import Modal from './ui/Modal'
@@ -13,201 +13,234 @@ import {
   getBuilding,
   updateBuilding,
   deleteBuilding,
-  recalc
+  recalc as recalcApi
 } from '../src/lib/api'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Definisi ikon untuk tiap tipe bangunan (copy dari HazardMap.js)
+const icons = {
+  BMN: L.icon({
+    iconUrl: '/icons/office-building-svgrepo-com.svg',
+    iconSize: [20,20],
+    iconAnchor: [6,20],
+    popupAnchor: [0,-20]
+  }),
+  FS: L.icon({
+    iconUrl: '/icons/hospital-svgrepo-com.svg',
+    iconSize: [20,20],
+    iconAnchor: [6,20],
+    popupAnchor: [0,-20]
+  }),
+  FD: L.icon({
+    iconUrl: '/icons/school-sharp-svgrepo-com.svg',
+    iconSize: [20,20],
+    iconAnchor: [6,20],
+    popupAnchor: [0,-20]
+  })
+}
 
 function LoadingSpinner() {
   return (
-    <svg
-      className="animate-spin h-5 w-5 inline-block mr-2"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-      />
+    <svg className="animate-spin h-5 w-5 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
     </svg>
   )
 }
 
-export default function CrudBuildings() {
-  const [provList, setProvList] = useState([])
-  const [kotaList, setKotaList] = useState([])
-  const [rows, setRows] = useState([])
-  const [file, setFile] = useState(null)
-
-  const [provFilter, setProvFilter] = useState('')
-  const [kotaFilter, setKotaFilter] = useState('')
+function MiniMap({ lat, lon, onLatLonChange, kode_bangunan }) {
+  const mapEl = useRef(null)
+  const mapRef = useRef(null)
+  const markerRef = useRef(null)
   const [search, setSearch] = useState('')
+  const [results, setResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
 
-  const [modalMode, setModalMode] = useState('') // 'add' | 'edit' | ''
+  useEffect(() => {
+    if (mapRef.current) return
+    const map = L.map(mapEl.current).setView([lat || -6.2, lon || 106.8], 13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map)
+    mapRef.current = map
+
+    markerRef.current = L.marker([lat || -6.2, lon || 106.8], {
+      draggable: true,
+      icon: icons[kode_bangunan] || icons.FD
+    })
+      .addTo(map)
+      .on('dragend', (e) => {
+        const { lat, lng } = e.target.getLatLng()
+        onLatLonChange(lat, lng)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (mapRef.current && markerRef.current) {
+      mapRef.current.setView([lat || -6.2, lon || 106.8], 13)
+      markerRef.current.setLatLng([lat || -6.2, lon || 106.8])
+      markerRef.current.setIcon(icons[kode_bangunan] || icons.FD)
+    }
+  }, [lat, lon, kode_bangunan])
+
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    if (!search.trim()) return
+    setIsSearching(true)
+    setResults([])
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=5`)
+      const data = await res.json()
+      setResults(data)
+    } catch (err) {
+      setResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleResultClick = (result) => {
+    const lat = parseFloat(result.lat)
+    const lon = parseFloat(result.lon)
+    onLatLonChange(lat, lon)
+    setResults([])
+    setSearch(result.display_name)
+    if (mapRef.current) {
+      mapRef.current.setView([lat, lon], 16)
+    }
+  }
+
+  return (
+    <div>
+      <form onSubmit={handleSearch} className="mb-2 flex gap-2">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari lokasi (misal: Taman Mini Indonesia Indah)"
+          className="border p-2 rounded-lg w-full text-black"
+        />
+        <button type="submit" className="bg-blue-500 text-white px-3 rounded-lg" disabled={isSearching}>
+          Cari
+        </button>
+      </form>
+      {results.length > 0 && (
+        <div className="bg-white border rounded-lg shadow max-h-40 overflow-y-auto mb-2 z-10 relative">
+          {results.map((r, i) => (
+            <div
+              key={r.place_id}
+              className="px-2 py-1 hover:bg-blue-100 cursor-pointer text-sm"
+              onClick={() => handleResultClick(r)}
+            >
+              {r.display_name}
+            </div>
+          ))}
+        </div>
+      )}
+      <div ref={mapEl} style={{ height: '200px', width: '100%', marginTop: '10px' }} />
+    </div>
+  )
+}
+
+export default function CrudBuildings({
+  provFilter,
+  setProvFilter,
+  kotaFilter,
+  setKotaFilter,
+  onSearchBuilding = () => {},
+  recalc = recalcApi
+}) {
+  const [file, setFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [rows, setRows] = useState([])
+  const [search, setSearch] = useState('')
+  const perPage = 5
+  const [page, setPage] = useState(1)
+  const [modalMode, setModalMode] = useState('')
   const [editing, setEditing] = useState(null)
-
-  const [isDelete, setIsDelete] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
-
-  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [isSavingAdd, setIsSavingAdd] = useState(false)
+  const [provList, setProvList] = useState([])
+  const [kotaList, setKotaList] = useState([])
 
-
-  // load provinsi once
   useEffect(() => {
     getBuildingProvinsi().then(setProvList)
   }, [])
 
-  // when provinsi filter changes, load kota filter
   useEffect(() => {
-    if (!provFilter) {
-      setKotaList([])
-    } else {
+    if (provFilter) {
       getBuildingKota(provFilter).then(setKotaList)
+    } else {
+      setKotaList([])
     }
   }, [provFilter])
 
-  // helper to refresh table
-  const refreshTable = () => {
+  function refreshTable() {
     if (provFilter && kotaFilter) {
-      return getBuildings({
-        provinsi: provFilter,
-        kota: kotaFilter,
-        nama: search
-      }).then(setRows)
-    } else {
-      setRows([])
-      return Promise.resolve()
+      return getBuildings({ provinsi: provFilter, kota: kotaFilter, nama: search }).then(setRows)
     }
+    setRows([])
+    return Promise.resolve()
   }
 
-  // load table on filter change or after delete
   useEffect(() => {
     refreshTable()
-  }, [provFilter, kotaFilter, search, isDelete])
+    setPage(1)
+  }, [provFilter, kotaFilter, search])
 
-  // === Modified onUpload ===
   async function onUpload() {
-    setIsSaving(true)
+    if (!file) return
+    setIsUploading(true)
     try {
-      if (!file) return
-
-      // 1) Upload CSV to server
       await uploadBuildingsCSV(file)
-      window.alert('Database berhasil diperbarui dari CSV')
-
-      // 2) Recalc all buildings
       await recalc()
-      window.alert('Perhitungan CSV selesai')
-
-      // 3) Reset file input & refresh table
       setFile(null)
       await refreshTable()
-    } catch (error) {
-      console.log(error);
+      alert('CSV uploaded and data refreshed')
+    } catch (e) {
+      console.error(e)
+      alert('Error uploading CSV')
     } finally {
-      setIsSaving(false)
+      setIsUploading(false)
     }
   }
-  // === end onUpload modification ===
 
   async function openEdit(id) {
-    try {
-      const b = await getBuilding(id)
-      setEditing(b)
-      setModalMode('edit')
-    } catch (error) {
-      console.error('Error loading building:', error)
-    }
+    const b = await getBuilding(id)
+    setEditing(b)
+    setModalMode('edit')
   }
 
-  // EDIT handler: optimistic UI + update DB + recalc + refresh + popups
   async function onSaveEdit(data) {
     setIsSavingEdit(true)
     try {
-      // 1) Optimistic update UI
-      setRows(rs =>
-        rs.map(b =>
-          b.id_bangunan === editing.id_bangunan
-            ? { ...b, ...data }
-            : b
-        )
-      )
-
-      // 2) Update di server
       await updateBuilding(editing.id_bangunan, data)
-      window.alert('Database berhasil diperbarui')
-
-      // 3) Recalc untuk bangunan
       await recalc(editing.id_bangunan)
-
-      // 4) Refresh tabel
       await refreshTable()
-      window.alert('Perhitungan untuk bangunan selesai')
-
-      // 5) Tutup modal
       setModalMode('')
       setEditing(null)
-    } catch (err) {
-      console.error('Error saving edit:', err)
+    } catch (e) {
+      console.error(e)
     } finally {
-      setIsSavingEdit(false);
+      setIsSavingEdit(false)
     }
   }
 
-  // ADD handler: optimistic insert + create DB + recalc + refresh + popups
   async function onAdd(data) {
     setIsSavingAdd(true)
     try {
       const { id_bangunan } = await getNewBuildingId(data.kode_bangunan)
-      const newRow = { ...data, id_bangunan }
-
-      // 1) Optimistic insert
-      setRows(rs => [newRow, ...rs])
-
-      // 2) Create di server
-      await addBuilding(newRow)
-      window.alert('Database berhasil diperbarui')
-
-      // 3) Recalc bangunan baru
+      await addBuilding({ ...data, id_bangunan })
       await recalc(id_bangunan)
-
-      // 4) Refresh tabel
       await refreshTable()
-      window.alert('Perhitungan untuk bangunan baru selesai')
-
-      // 5) Tutup modal
       setModalMode('')
-    } catch (err) {
-      console.error('Error adding building:', err)
+    } catch (e) {
+      console.error(e)
     } finally {
       setIsSavingAdd(false)
-    }
-  }
-
-  // DELETE handler: optimistic remove + delete DB + recalc background
-  async function confirmDelete() {
-    setIsDeleting(true)
-    try {
-      setRows(rs => rs.filter(b => b.id_bangunan !== deleteTarget.id_bangunan))
-      await deleteBuilding(deleteTarget.id_bangunan, deleteTarget.provinsi)
-      setIsDelete(prev => !prev)
-      setDeleteTarget(null)
-    } catch (err) {
-      console.error(err)
-      alert('Gagal menghapus bangunan')
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -215,160 +248,151 @@ export default function CrudBuildings() {
     setDeleteTarget(row)
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await deleteBuilding(deleteTarget.id_bangunan, deleteTarget.provinsi)
+      await refreshTable()
+      setDeleteTarget(null)
+    } catch (e) {
+      console.error(e)
+      alert('Error deleting')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const totalPages = Math.ceil(rows.length / perPage)
+  const paginated = rows.slice((page - 1) * perPage, page * perPage)
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow flex flex-col gap-4">
-      <h2 className="text-xl font-bold">Manajemen Bangunan</h2>
-
-      {/* Upload CSV */}
-      <div className="flex gap-2 items-center">
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="border p-2 rounded-lg flex-1"
-        />
-        <Button
-          onClick={onUpload}
-          disabled={!file || isSaving}
-          className={`bg-red-600 hover:bg-red-700 text-white flex items-center justify-center ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {isSaving && (
-            <svg
-              className="animate-spin h-5 w-5 mr-2"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-          )}
-          Upload
-        </Button>
+    <div className="bg-gray-800 p-4 -mx-4 rounded-2xl shadow flex flex-col h-[500px]">
+      <h2 className="text-xl font-bold mb-2 text-white">Manajemen Data Bangunan</h2>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="file"
+            onChange={e => setFile(e.target.files[0])}
+            className="border p-2 rounded-lg flex-1 text-white"
+          />
+          <Button
+            onClick={onUpload}
+            disabled={!file || isUploading}
+            className="bg-[#22D3EE] text-black rounded-4xl hover:bg-[#3B82F6] hover:text-white px-4 py-2 transition"
+          >
+            {isUploading && <LoadingSpinner />} Unggah Data
+          </Button>
+        </div>
+        <div className="flex gap-2 flex-wrap items-end">
+          <Select
+            id="provFilter"
+            value={provFilter}
+            onChange={setProvFilter}
+            options={['', ...provList]}
+            placeholder="Pilih Provinsi"
+            className="w-48"
+          />
+          <Select
+            id="kotaFilter"
+            value={kotaFilter}
+            onChange={setKotaFilter}
+            options={['', ...kotaList]}
+            disabled={!provFilter}
+            placeholder="Pilih Kota"
+            className="w-48"
+          />
+          <input
+            type="text"
+            placeholder="Cari Nama Gedung"
+            disabled={!kotaFilter}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border p-2 rounded-lg flex-1 text-white"
+          />
+          <Button
+            onClick={() => setModalMode('add')}
+            className="text-black px-4 py-2 bg-[#C084FC] rounded-4xl hover:bg-cyan-700 hover:text-white"
+          >
+            Tambah
+          </Button>
+        </div>
       </div>
-
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap items-end">
-        <Select
-          id="provFilterBangunan"
-          label="Provinsi:"
-          options={['', ...provList]}
-          value={provFilter}
-          onChange={setProvFilter}
-          placeholder="-- Pilih Provinsi --"
-        />
-        <Select
-          id="kotaFilterBangunan"
-          label="Kota/Kabupaten:"
-          options={['', ...kotaList]}
-          value={kotaFilter}
-          onChange={setKotaFilter}
-          disabled={!provFilter}
-          placeholder="-- Pilih Kota --"
-        />
-        <input
-          type="text"
-          placeholder="Cari Nama"
-          disabled={!kotaFilter}
-          className="border p-2 rounded-lg flex-1"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Button
-          onClick={() => setModalMode('add')}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          ADD +
-        </Button>
-      </div>
-
-      {/* Table */}
-      <table className="w-full text-sm mt-4">
-        <thead className="bg-red-700 text-white">
-          <tr>
-            <th className="p-2 text-left">Nama Gedung</th>
-            <th className="p-2 text-left">Alamat</th>
-            <th className="p-2 text-left">Kota</th>
-            <th className="p-2 text-left">Provinsi</th>
-            <th className="p-2 text-left">Lon</th>
-            <th className="p-2 text-left">Lat</th>
-            <th className="p-2 text-left">Taxonomy</th>
-            <th className="p-2 text-left">Luas</th>
-            <th className="p-2 text-left">Jumlah Lantai</th>
-            <th className="p-2 text-left">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((b) => (
-            <tr key={b.id_bangunan}>
-              <td className="p-2">{b.nama_gedung}</td>
-              <td className="p-2">{b.alamat}</td>
-              <td className="p-2">{b.kota}</td>
-              <td className="p-2">{b.provinsi}</td>
-              <td className="p-2">{b.lon}</td>
-              <td className="p-2">{b.lat}</td>
-              <td className="p-2">{b.taxonomy}</td>
-              <td className="p-2">{b.luas}</td>
-              <td className="p-2">{b.jumlah_lantai}</td>
-              <td className="p-2 space-x-2">
-                <button
-                  onClick={() => openEdit(b.id_bangunan)}
-                  className="text-blue-600 hover:underline"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => onDeleteClick(b)}
-                  className="text-red-600 hover:underline"
-                >
-                  🗑️
-                </button>
-              </td>
+      <div className="flex-1 overflow-auto mt-4">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-800 text-white sticky top-0">
+            <tr>
+              <th className="p-2">Nama Gedung</th>
+              <th className="p-2">Alamat</th>
+              <th className="p-2">Kota</th>
+              <th className="p-2">Lon</th>
+              <th className="p-2">Lat</th>
+              <th className="p-2">Lantai</th>
+              <th className="p-2">Taxonomy</th>
+              <th className="p-2">Aksi</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Add Modal */}
+          </thead>
+          <tbody>
+            {paginated.map(b => (
+              <tr
+                key={b.id_bangunan}
+                className="hover:bg-gray-500 cursor-pointer"
+                onClick={() =>
+                  onSearchBuilding({
+                    lat: parseFloat(b.lat),
+                    lon: parseFloat(b.lon),
+                    name: b.nama_gedung,
+                    type: (b.id_bangunan || '').split('_')[0]
+                  })
+                }
+              >
+                <td className="p-2 text-white">{b.nama_gedung}</td>
+                <td className="p-2 text-white">{b.alamat}</td>
+                <td className="p-2 text-white">{b.kota}</td>
+                <td className="p-2 text-white">{b.lon}</td>
+                <td className="p-2 text-white">{b.lat}</td>
+                <td className="p-2 text-white">{b.jumlah_lantai}</td>
+                <td className="p-2 text-white">{b.taxonomy}</td>
+                <td className="p-2 space-x-2">
+                  <button onClick={() => openEdit(b.id_bangunan)} className="text-blue-600">✏️</button>
+                  <button onClick={() => onDeleteClick(b)} className="text-red-600">🗑️</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex justify-center items-center gap-2 mt-2 text-white">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-3 py-1 bg-gray-500 rounded text-white"
+        >
+          ‹ Prev
+        </button>
+        <span>{page} / {totalPages || 1}</span>
+        <button
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          disabled={page === totalPages || totalPages === 0}
+          className="px-3 py-1 bg-gray-500 rounded disabled:opacity-50"
+        >
+          Next ›
+        </button>
+      </div>
       <Modal isOpen={modalMode === 'add'} onClose={() => setModalMode('')}>
         <AddForm provList={provList} onSave={onAdd} isSavingAdd={isSavingAdd} />
       </Modal>
-
-      {/* Edit Modal */}
       <Modal isOpen={modalMode === 'edit'} onClose={() => setModalMode('')}>
         <EditForm initial={editing} onSave={onSaveEdit} isSavingEdit={isSavingEdit} />
       </Modal>
-
-       {/* Modal Delete */}
-       <Modal
-        isOpen={!!deleteTarget}
-        onClose={() => deleteTarget && !isDeleting && setDeleteTarget(null)}
-      >
+      <Modal isOpen={!!deleteTarget} onClose={() => !isDeleting && setDeleteTarget(null)}>
         <h3 className="text-lg font-bold mb-4">Hapus Bangunan</h3>
         <p>Yakin ingin menghapus bangunan <strong>{deleteTarget?.nama_gedung}</strong>?</p>
         <div className="flex justify-end gap-4 mt-6">
-          <Button
-            onClick={() => setDeleteTarget(null)}
-            disabled={isDeleting}
-            className="bg-gray-400 hover:bg-gray-500 text-white"
-          >
+          <Button onClick={() => setDeleteTarget(null)} disabled={isDeleting} className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">
             Batal
           </Button>
-          <Button
-            onClick={confirmDelete}
-            disabled={isDeleting}
-            className="bg-red-600 hover:bg-red-700 text-white flex items-center"
-          >
+          <Button onClick={confirmDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
             {isDeleting && <LoadingSpinner />}
             Hapus
           </Button>
@@ -377,8 +401,6 @@ export default function CrudBuildings() {
     </div>
   )
 }
-
-// ---- Sub-components for Add/Edit ----
 
 function AddForm({ provList, onSave, isSavingAdd }) {
   const [data, setData] = useState({
@@ -407,49 +429,50 @@ function AddForm({ provList, onSave, isSavingAdd }) {
     }
   }, [data.provinsi])
 
+  const handleLatLonChange = (lat, lon) => {
+    setData(d => ({ ...d, lat: lat.toString(), lon: lon.toString() }))
+  }
+
   return (
     <>
       <h3 className="text-lg font-bold mb-4">Tambah Bangunan</h3>
-      {['nama_gedung', 'alamat', 'luas', 'jumlah_lantai'].map((fld) => (
-        <div key={fld}>
+      {['nama_gedung','alamat','luas','jumlah_lantai'].map(fld => (
+        <div key={fld} className="mb-2">
           <label className="block text-sm font-semibold">
-            {fld === 'jumlah_lantai'
-              ? 'JUMLAH LANTAI'
-              : fld.replace('_', ' ').toUpperCase()}
+            {fld === 'jumlah_lantai' ? 'JUMLAH LANTAI' : fld.replace('_',' ').toUpperCase()}
           </label>
           <input
-            type={['luas', 'jumlah_lantai'].includes(fld) ? 'number' : 'text'}
+            type={['luas','jumlah_lantai'].includes(fld) ? 'number' : 'text'}
             step={fld === 'luas' ? 'any' : undefined}
             value={data[fld]}
-            onChange={e =>
-              setData(d => ({ ...d, [fld]: e.target.value }))
-            }
+            onChange={e => setData(d => ({ ...d, [fld]: e.target.value }))}
             className="border p-2 w-full rounded-lg"
           />
         </div>
       ))}
       <Select
         id="addProvinsi"
-        label="Provinsi"
         options={provList}
         value={data.provinsi}
         onChange={v => setData(d => ({ ...d, provinsi: v }))}
-        placeholder="-- Pilih Provinsi --"
+        placeholder="Pilih Provinsi"
+        className="w-full mb-2"
       />
       <Select
         id="addKota"
-        label="Kota/Kabupaten"
-        options={['', ...localKotaList]}
+        options={['',...localKotaList]}
         value={data.kota}
         onChange={v => setData(d => ({ ...d, kota: v }))}
         disabled={!data.provinsi}
-        placeholder="-- Pilih Kota --"
+        placeholder="Pilih Kota"
+        className="w-full mb-2"
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 mb-2">
         <div>
           <label className="block text-sm font-semibold">Longitude</label>
           <input
-            type="number" step="any"
+            type="number"
+            step="any"
             value={data.lon}
             onChange={e => setData(d => ({ ...d, lon: e.target.value }))}
             className="border p-2 w-full rounded-lg"
@@ -458,60 +481,42 @@ function AddForm({ provList, onSave, isSavingAdd }) {
         <div>
           <label className="block text-sm font-semibold">Latitude</label>
           <input
-            type="number" step="any"
+            type="number"
+            step="any"
             value={data.lat}
             onChange={e => setData(d => ({ ...d, lat: e.target.value }))}
             className="border p-2 w-full rounded-lg"
           />
         </div>
       </div>
+      <MiniMap lat={parseFloat(data.lat)} lon={parseFloat(data.lon)} onLatLonChange={handleLatLonChange} kode_bangunan={data.kode_bangunan} />
       <Select
         id="addKodeBangunan"
-        label="Kode Bangunan"
-        options={['BMN', 'FS', 'FD']}
+        options={['BMN','FS','FD']}
         value={data.kode_bangunan}
         onChange={v => setData(d => ({ ...d, kode_bangunan: v }))}
+        className="w-full mb-2"
       />
       <Select
         id="addTaxonomy"
-        label="Taxonomy"
-        options={['CR', 'MCF', 'MUR', 'LightWood']}
+        options={['CR','MCF','MUR','LightWood']}
         value={data.taxonomy}
         onChange={v => setData(d => ({ ...d, taxonomy: v }))}
+        className="w-full mb-4"
       />
-      <div className="flex justify-end gap-4 mt-4">
+      <div className="flex justify-end">
         <Button
-          disable={isSavingAdd}
-          onClick={() => onSave({
-            ...data,
-            luas: parseFloat(data.luas),
-            jumlah_lantai: parseInt(data.jumlah_lantai, 10)
-          })}
-          className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center ${isSavingAdd ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() =>
+            onSave({
+              ...data,
+              luas: parseFloat(data.luas),
+              jumlah_lantai: parseInt(data.jumlah_lantai, 10)
+            })
+          }
+          disabled={isSavingAdd}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
-          {isSavingAdd && (
-            <svg
-              className="animate-spin h-5 w-5 mr-2"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-          )}
-          Tambah
+          {isSavingAdd ? 'Menyimpan...' : 'Tambah'}
         </Button>
       </div>
     </>
@@ -525,28 +530,43 @@ function EditForm({ initial, onSave, isSavingEdit }) {
     setData(initial || {})
   }, [initial])
 
+  const handleLatLonChange = (lat, lon) => {
+    setData(d => ({ ...d, lat: lat.toString(), lon: lon.toString() }))
+  }
+
   return (
     <>
       <h3 className="text-lg font-bold mb-4">Edit Bangunan</h3>
-      {['nama_gedung', 'alamat', 'lon', 'lat', 'luas', 'jumlah_lantai'].map((fld) => (
-        <div key={fld}>
+      {['nama_gedung','alamat','lon','lat','luas','jumlah_lantai'].map(fld => (
+        <div key={fld} className="mb-2">
           <label className="block text-sm font-semibold">
-            {fld === 'jumlah_lantai'
-              ? 'JUMLAH LANTAI'
-              : fld.replace('_', ' ').toUpperCase()}
+            {fld === 'jumlah_lantai' ? 'JUMLAH LANTAI' : fld.replace('_',' ').toUpperCase()}
           </label>
           <input
-            type={['lon', 'lat', 'luas', 'jumlah_lantai'].includes(fld) ? 'number' : 'text'}
-            step={['lon', 'lat', 'luas'].includes(fld) ? 'any' : undefined}
+            type={['lon','lat','luas','jumlah_lantai'].includes(fld) ? 'number' : 'text'}
+            step={['lon','lat','luas'].includes(fld) ? 'any' : undefined}
             value={data[fld] ?? ''}
             onChange={e => setData(d => ({ ...d, [fld]: e.target.value }))}
             className="border p-2 w-full rounded-lg"
           />
         </div>
       ))}
-      <div className="flex justify-end gap-4 mt-4">
+      <MiniMap lat={parseFloat(data.lat)} lon={parseFloat(data.lon)} onLatLonChange={handleLatLonChange} kode_bangunan={data.kode_bangunan || (data.id_bangunan ? data.id_bangunan.split('_')[0] : 'BMN')} />
+      <div className="mb-4">
+        <label className="block text-sm font-semibold">Taxonomy</label>
+        <select
+          value={data.taxonomy || ''}
+          onChange={e => setData(d => ({ ...d, taxonomy: e.target.value }))}
+          className="border p-2 w-full rounded-lg"
+        >
+          <option value="CR">CR</option>
+          <option value="MCF">MCF</option>
+          <option value="MUR">MUR</option>
+          <option value="LightWood">LightWood</option>
+        </select>
+      </div>
+      <div className="flex justify-end gap-4">
         <Button
-          disabled={isSavingEdit}
           onClick={() => onSave({
             nama_gedung: data.nama_gedung,
             alamat: data.alamat,
@@ -556,31 +576,10 @@ function EditForm({ initial, onSave, isSavingEdit }) {
             jumlah_lantai: parseInt(data.jumlah_lantai, 10),
             taxonomy: data.taxonomy
           })}
-          className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center ${isSavingEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isSavingEdit}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
-          {isSavingEdit && (
-            <svg
-              className="animate-spin h-5 w-5 mr-2"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-          )}
-          {isSavingEdit ? 'Menyimpan…' : 'Simpan'}
+          {isSavingEdit ? 'Menyimpan...' : 'Simpan'}
         </Button>
       </div>
     </>

@@ -60,26 +60,24 @@ export default function CrudHSBGN() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow flex flex-col gap-4">
-      <h2 className="text-xl font-bold">Manajemen HSBGN</h2>
-
+    <div className="bg-gray-800 p-6 rounded-lg shadow flex flex-col gap-4">
       {/* Filters */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold">Provinsi:</label>
+        <label className="text-sm font-semibold text-white"></label>
         <select
-          className="border p-2 rounded-lg"
+          className="border px-4 py-2 rounded-4xl bg-[#C6FF00] appearance-none w-72"
           value={filterProv}
           onChange={e => setFilterProv(e.target.value)}
         >
-          <option value="">-- Semua Provinsi --</option>
+          <option value="">Pilih Provinsi</option>
           {provOptions.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
 
-        <label className="text-sm font-semibold">Cari Kota:</label>
+        <label className="text-sm font-semibold"></label>
         <input
           type="text"
-          className="border p-2 rounded-lg"
-          placeholder="ketik untuk cari..."
+          className=" p-2 rounded-lg text-white border-white bg-gray-400"
+          placeholder="Cari Kota..."
           value={searchCity}
           onChange={e => setSearchCity(e.target.value)}
         />
@@ -88,21 +86,21 @@ export default function CrudHSBGN() {
       {/* Table */}
       <div className="overflow-auto max-h-[400px]">
         <table className="w-full text-sm mt-4">
-          <thead className="bg-red-700 text-white">
+          <thead className="bg-[#0a2c68] text-white rounded-lg">
             <tr>
-              <th className="p-2 text-left">Kota</th>
-              <th className="p-2 text-left">Provinsi</th>
-              <th className="p-2 text-left">Nilai HSBGN</th>
-              <th className="p-2 text-left">Aksi</th>
+              <th className="p-2 text-justify">Kota</th>
+              <th className="p-2 text-justify">Provinsi</th>
+              <th className="p-2 text-right whitespace-nowrap">Nilai HSBGN</th>
+              <th className="p-2 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.map(r => (
               <tr key={r.id_kota}>
-                <td className="p-2">{r.kota}</td>
-                <td className="p-2">{r.provinsi}</td>
-                <td className="p-2">Rp {Number(r.hsbgn).toLocaleString('id-ID')}</td>
-                <td className="p-2">
+                <td className="p-2 text-white">{r.kota}</td>
+                <td className="p-2 text-white">{r.provinsi}</td>
+                <td className="p-2 text-white">Rp {Number(r.hsbgn).toLocaleString('id-ID')}</td>
+                <td className="p-2 text-white">
                   <Button
                     onClick={() => onEditClick(r)}
                     className="text-blue-600 hover:underline p-0"

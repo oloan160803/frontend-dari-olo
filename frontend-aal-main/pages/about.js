@@ -5,22 +5,46 @@ const leadership = [
   {
     name: 'Oloan Yesmando Nainggolan',
     role: '15121020',
-    imageUrl: '/oloan.jpg',
+    imageUrl: '/oloan.svg',
   },
   {
     name: 'Celine Deandra Romandiza',
     role: '15121032',
-    imageUrl: '/celine.jpg',
+    imageUrl: '/celine.svg',
   },
   {
     name: 'Bintang Maulana Magribi',
     role: '15121039',
-    imageUrl: '/bintang.jpg',
+    imageUrl: '/bintang.svg',
   },
   {
     name: 'Fortuna Mahardikasuci',
     role: '15121055',
-    imageUrl: '/fortuna.jpg',
+    imageUrl: '/fortuna.svg',
+  },
+]
+
+// Daftar Dosen Pembimbing
+const supervisors = [
+  {
+    name: 'Prof. Dr. Irwan Meilano, S.T., M.Sc.',
+    role: 'Dosen Pembimbing 1',
+    imageUrl: '/oloan.jpg',
+  },
+  {
+    name: 'Dr. Riantini Virtriana, S.T., M.T.',
+    role: 'Dosen Pembimbing 2',
+    imageUrl: '/oloan.jpg',
+  },
+  {
+    name: 'Deni Suwardhi, S.T., M.T., Ph.D.',
+    role: 'Dosen Pembimbing 2',
+    imageUrl: '/oloan.jpg',
+  },
+  {
+    name: 'Dr.Techn. Nabila Sofia Eryan Putri S.T.,M.T.',
+    role: 'Dosen Pembimbing 2',
+    imageUrl: '/oloan.jpg',
   },
 ]
 
@@ -29,37 +53,37 @@ export default function About() {
     <div className="min-h-screen bg-[#0D0F12] text-gray-200">
       <Header />
 
-      <main className="max-w-screen mx-auto py-10 px-6 space-y-6 mt-18">
+      <main className="max-w-screen mx-auto py-10 px-6 space-y-12 mt-18">
         <div className="mx-auto max-w-7xl">
           {/* Intro */}
           <div className="max-w-2xl mb-12">
             <h1 className="text-4xl font-semibold text-[#ff6a00]">
               Capstone AAL
             </h1>
-            <p className="mt-4 text-lg text-[#22D3EE] text-justify">
+            <p className="mt-4 text-lg text-white text-justify">
               CardinAAL dikembangkan oleh tim yang terdiri dari mahasiswa Program Studi Teknik
               Geodesi dan Geomatika 2021 untuk memenuhi SKS mata kuliah GD4201 Capstone Project.
               Kami berkomitmen untuk membangun platform yang berguna dan mudah digunakan untuk
-              menghitung kerugian tahunan rata-rata (AAL) dan kerugian langsung (Direct Loss)
+              menghitung kerugian tahunan rata-rata (Average Annual Loss) dan kerugian langsung (Direct Loss)
               akibat bencana alam di Indonesia.
             </p>
           </div>
 
-          {/* Kelompok */}
-          <div className="">
+          {/* Kelompok Mahasiswa */}
+          <section>
             <h2 className="text-3xl font-semibold text-[#ff6a00] mb-6">
-              Meet our Team
+              Kelompok Capstone AAL
             </h2>
             <ul role="list" className="grid gap-x-8 gap-y-12 sm:grid-cols-2">
               {leadership.map((person) => (
-                <li key={person.name} className="flex items-center gap-x-6">
+                <li key={person.name} className="flex items-center gap-x-6 border-black">
                   <img
                     src={person.imageUrl}
                     alt={person.name}
-                    className="h-70 w-70 rounded-full object-cover"
+                    className="h-50 w-50 rounded-full object-cover border-black"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold text-[#22D3EE]">
+                    <h3 className="text-lg font-semibold text-white">
                       {person.name}
                     </h3>
                     <p className="text-lg text-[#ff6a00]">{person.role}</p>
@@ -67,7 +91,31 @@ export default function About() {
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
+
+          {/* Dosen Pembimbing
+          <section>
+            <h2 className="text-3xl font-semibold text-[#ff6a00] mb-6 mt-18">
+              Dosen Pembimbing
+            </h2>
+            <ul role="list" className="grid gap-x-8 gap-y-12 sm:grid-cols-2">
+              {supervisors.map((sup) => (
+                <li key={sup.name} className="flex items-center gap-x-6">
+                  <img
+                    src={sup.imageUrl}
+                    alt={sup.name}
+                    className="h-36 w-36 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#22D3EE]">
+                      {sup.name}
+                    </h3>
+                    <p className="text-lg text-[#ff6a00]">{sup.role}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section> */}
         </div>
       </main>
     </div>
