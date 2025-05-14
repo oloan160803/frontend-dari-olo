@@ -82,7 +82,7 @@ function getJenksBreaks(data, n) {
   return breaks
 }
 
-const colorScale = ['#FFEDA0','#FED976','#FD8D3C','#FC4E2A','#E31A1C','#BD0026']
+const colorScale = ['#313695','#4575b4','#74add1','#fdae61','#f46d43','#a50026'] // pseudocolor: biru ke merah
 const nullColor = '#CCCCCC'
 function getColor(v, jenks) {
   if (v == null || isNaN(v)) return nullColor
@@ -107,6 +107,30 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
   const hazardLayer  = useRef(null)
   const buildingCluster = useRef(null)
 
+  // Ganti let legendControl = null menjadi useRef
+  const legendControl = useRef(null)
+  let breaks = []
+
+  function updateLegend(breaks, colorScale, nullColor) {
+    // Hapus legend lama jika ada
+    if (legendControl.current && mapRef.current) {
+      mapRef.current.removeControl(legendControl.current)
+      legendControl.current = null
+    }
+    legendControl.current = L.control({ position: 'bottomright' })
+    legendControl.current.onAdd = function () {
+      const div = L.DomUtil.create('div', 'info legend custom-legend-bg')
+      for (let i = 0; i < breaks.length - 1; i++) {
+        div.innerHTML += `<div style=\"display:flex;align-items:center;margin-bottom:2px;\">
+          <i style=\"background:${colorScale[i]};width:18px;height:18px;display:inline-block;margin-right:8px;\"></i>
+          <span style=\"font-size:13px;\">${breaks[i].toFixed(2)} – ${breaks[i + 1].toFixed(2)}</span>
+        </div>`
+      }
+      return div
+    }
+    legendControl.current.addTo(mapRef.current)
+  }
+
   // initialize map and building clusters
   useEffect(() => {
     if (mapRef.current) return
@@ -124,26 +148,64 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
   },[])
 
   // re-cluster buildings when provinsi/kota change
- useEffect(() => {
-  const map = mapRef.current
-  buildingCluster.current.clearLayers()
-  if (!map || !provinsi || !kota) return
+  useEffect(() => {
+    const map = mapRef.current
+    buildingCluster.current.clearLayers()
+    if (!map || !provinsi || !kota) return
 
-  fetch(`/api/gedung?provinsi=${encodeURIComponent(provinsi)}&kota=${encodeURIComponent(kota)}`)
-    .then(r => r.json())
-    .then(data => {
-      data.features.forEach(f => {
-        const [lon, lat] = f.geometry.coordinates
-        const type = (f.properties.id_bangunan || '').split('_')[0]
+    let markers = []
 
-        L.marker([lat, lon], { icon: icons[type] || icons.FD })
-          .bindPopup(`<strong>${f.properties.nama_gedung}</strong>`)
-          .addTo(buildingCluster.current)
+    fetch(`/api/gedung?provinsi=${encodeURIComponent(provinsi)}&kota=${encodeURIComponent(kota)}`)
+      .then(r => r.json())
+      .then(data => {
+        data.features.forEach(f => {
+          const [lon, lat] = f.geometry.coordinates
+          const type = (f.properties.id_bangunan || '').split('_')[0]
+          const marker = L.marker([lat, lon], { icon: icons[type] || icons.FD })
+          // Tambahkan event klik untuk popup dengan intensitas bencana
+          marker.on('click', function(e) {
+            let intensity = null
+            // Cek apakah hazardLayer dan buffer ada
+            if (hazardLayer.current) {
+              hazardLayer.current.eachLayer(layer => {
+                if (layer.getBounds && layer.getBounds().contains(marker.getLatLng())) {
+                  intensity = layer.feature?.properties?.[field]
+                }
+              })
+            }
+            const infoGedung = `<strong>${f.properties.nama_gedung}</strong>`
+            const infoIntensitas = intensity !== null && intensity !== undefined
+              ? `<br><b>Intensitas Bencana:</b> ${intensity}`
+              : '<br><i>Tidak ada data intensitas bencana</i>'
+            marker.bindPopup(infoGedung + infoIntensitas).openPopup()
+          })
+          markers.push(marker)
+        })
+        // Fungsi untuk update cluster/marker sesuai zoom
+        function updateBuildingMarkers() {
+          const zoom = map.getZoom()
+          buildingCluster.current.clearLayers()
+          markers.forEach(m => m.remove())
+          if (zoom >= 13) {
+            // Tampilkan marker satu per satu
+            markers.forEach(m => m.addTo(map))
+          } else {
+            // Tampilkan cluster
+            markers.forEach(m => buildingCluster.current.addLayer(m))
+            map.addLayer(buildingCluster.current)
+          }
+        }
+        updateBuildingMarkers()
+        map.on('zoomend', updateBuildingMarkers)
+        // Fit bounds hanya saat pertama kali
+        const bounds = L.latLngBounds(markers.map(m => m.getLatLng()))
+        if (bounds.isValid()) map.fitBounds(bounds)
       })
-      const bounds = buildingCluster.current.getBounds()
-      if (bounds.isValid()) map.fitBounds(bounds)
-    })
-}, [provinsi, kota])
+    // Cleanup listener saat unmount
+    return () => {
+      if (map) map.off('zoomend')
+    }
+  }, [provinsi, kota, field, type])
 
   // whenever map moves or filters change
   useEffect(() => {
@@ -157,7 +219,8 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
   function getTolerance(zoom) {
     if (zoom < 6 ) return 0.01
     if (zoom < 10) return 0.001
-    return 0.0001
+    if (zoom < 16) return 0.0001
+    return 0.000001 // zoom sangat dalam, tolerance sangat kecil
   }
 
   async function updateHazard() {
@@ -167,6 +230,10 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
     // clear if not fully selected
     if (!provinsi || !kota || !type || !field) {
       hazardLayer.current && map.removeLayer(hazardLayer.current)
+      if (legendControl.current) {
+        map.removeControl(legendControl.current)
+        legendControl.current = null
+      }
       return
     }
 
@@ -186,20 +253,34 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
 
     // compute jenks breaks (just for color ramp)
     const numClasses = Math.min(6, vals.length)
-    let jenks = []
-    if (numClasses>1) jenks = getJenksBreaks(vals, numClasses)
+    breaks = []
+    if (numClasses>1) breaks = getJenksBreaks(vals, numClasses)
+
+    // update legend
+    if (breaks.length > 1) {
+      updateLegend(breaks, colorScale, nullColor)
+    } else if (legendControl.current) {
+      map.removeControl(legendControl.current)
+      legendControl.current = null
+    }
 
     // remove old layer
     hazardLayer.current && map.removeLayer(hazardLayer.current)
 
-    // draw new
+    // draw new with improved rendering
     hazardLayer.current = L.geoJSON(data, {
-      renderer: L.canvas({ padding: 0.5, tolerance: 0 }),
+      renderer: L.canvas({ 
+        padding: 0.5,
+        tolerance: 0,
+        updateWhenIdle: true,
+        updateWhenZooming: true
+      }),
       interactive: true,
       style: ft=>({
-        fillColor: getColor(ft.properties[field], jenks),
-        stroke:    false,
-        fillOpacity:0.5
+        fillColor: getColor(ft.properties[field], breaks),
+        stroke: false,
+        fillOpacity: 0.7,
+        bubblingMouseEvents: false
       }),
       onEachFeature: (ft, layer)=>{
         const v = ft.properties[field]
@@ -211,6 +292,32 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
         `)
       }
     }).addTo(map)
+
+    // Pastikan layer hazard selalu di atas layer bangunan
+    hazardLayer.current.setZIndex(1000)
+  }
+
+  // Tambahkan CSS custom untuk background legenda
+  if (typeof window !== 'undefined') {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      .custom-legend-bg {
+        background: rgba(255,255,255,0.7);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        padding: 10px 14px 8px 14px;
+        font-family: sans-serif;
+        font-size: 13px;
+        color: #222;
+        min-width: 120px;
+      }
+      .custom-legend-bg .info.legend {
+        background: none;
+        box-shadow: none;
+        padding: 0;
+      }
+    `
+    document.head.appendChild(style)
   }
 
   return (
