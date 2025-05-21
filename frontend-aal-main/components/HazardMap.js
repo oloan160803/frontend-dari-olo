@@ -162,20 +162,34 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
           const [lon, lat] = f.geometry.coordinates
           const type = (f.properties.id_bangunan || '').split('_')[0]
           const marker = L.marker([lat, lon], { icon: icons[type] || icons.FD })
+          
           // Tambahkan event klik untuk popup dengan intensitas bencana
           marker.on('click', function(e) {
             let intensity = null
-            // Cek apakah hazardLayer dan buffer ada
+            // Cek apakah hazardLayer ada
             if (hazardLayer.current) {
+              const clickedPoint = e.latlng
+              let nearestCentroid = null
+              let minDist = Infinity
+
+              // Cari centroid terdekat
               hazardLayer.current.eachLayer(layer => {
-                if (layer.getBounds && layer.getBounds().contains(marker.getLatLng())) {
-                  intensity = layer.feature?.properties?.[field]
+                const centroid = layer.getBounds().getCenter()
+                const d = map.distance(clickedPoint, centroid)
+                if (d < minDist) {
+                  minDist = d
+                  nearestCentroid = layer
                 }
               })
+
+              if (nearestCentroid) {
+                intensity = nearestCentroid.feature.properties[field]
+              }
             }
+
             const infoGedung = `<strong>${f.properties.nama_gedung}</strong>`
             const infoIntensitas = intensity !== null && intensity !== undefined
-              ? `<br><b>Intensitas Bencana:</b> ${intensity}`
+              ? `<br><b>Intensitas Bencana:</b> ${intensity.toFixed(2)}`
               : '<br><i>Tidak ada data intensitas bencana</i>'
             marker.bindPopup(infoGedung + infoIntensitas).openPopup()
           })
@@ -207,14 +221,23 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
     }
   }, [provinsi, kota, field, type])
 
-  // whenever map moves or filters change
+  // Modifikasi useEffect untuk menangani update buffer
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    map.on('moveend', updateHazard)
+
+    // Update buffer saat peta selesai bergerak
+    map.on('moveend', () => updateHazard())
+    
+    // Update buffer saat pertama kali
     updateHazard()
-    return ()=>map.off('moveend', updateHazard)
-  },[provinsi,kota,type,field])
+
+    // Cleanup
+    return () => {
+      map.off('moveend')
+      map.off('click') // Tambahkan cleanup untuk event click
+    }
+  }, [provinsi, kota, type, field])
 
   function getTolerance(zoom) {
     if (zoom < 6 ) return 0.01
@@ -267,31 +290,60 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
     // remove old layer
     hazardLayer.current && map.removeLayer(hazardLayer.current)
 
-    // draw new with improved rendering
+    // 1) Gambar polygon tanpa border dan dengan opacity
     hazardLayer.current = L.geoJSON(data, {
-      renderer: L.canvas({ 
-        padding: 0.5,
-        tolerance: 0,
-        updateWhenIdle: true,
-        updateWhenZooming: true
-      }),
-      interactive: true,
-      style: ft=>({
-        fillColor: getColor(ft.properties[field], breaks),
+      renderer: L.canvas(),
+      style: feature => ({
+        fillColor: getColor(feature.properties[field], breaks),
         stroke: false,
-        fillOpacity: 0.7,
-        bubblingMouseEvents: false
-      }),
-      onEachFeature: (ft, layer)=>{
-        const v = ft.properties[field]
-        layer.bindPopup(`
-          <div style="font-family:sans-serif;font-size:0.9rem">
-            <strong>${type.toUpperCase()} — ${field.replace('_',' ').toUpperCase()}</strong><br>
-            Nilai: <b>${v==null?'Null':v.toFixed?.(2)||v}</b>
-          </div>
-        `)
-      }
+        fillOpacity: 0.5
+      })
     }).addTo(map)
+
+    // 2) Buat layerGroup untuk semua centroid
+    const centroidLayer = L.layerGroup()
+    hazardLayer.current.eachLayer(layer => {
+      const c = layer.getBounds().getCenter()
+      const v = layer.feature.properties[field]
+      const col = getColor(v, breaks)
+      const marker = L.circleMarker(c, {
+        radius: 5,
+        stroke: false,
+        fillColor: col,
+        fillOpacity: 1
+      })
+      // simpan intensitas di options
+      marker.options.value = v
+      centroidLayer.addLayer(marker)
+    })
+    centroidLayer.addTo(map)
+
+    // 3) Tangani klik peta — cari centroid terdekat
+    map.on('click', e => {
+      let nearest = null
+      let minDist = Infinity
+
+      centroidLayer.eachLayer(marker => {
+        const d = map.distance(e.latlng, marker.getLatLng())
+        if (d < minDist) {
+          minDist = d
+          nearest = marker
+        }
+      })
+
+      if (nearest) {
+        L.popup({ offset: [0, -10] })
+          .setLatLng(nearest.getLatLng())
+          .setContent(
+            `<div style="font-family:sans-serif;font-size:0.9rem">
+              <strong>${type.toUpperCase()} — ${field.replace('_',' ').toUpperCase()}</strong><br>
+              Intensitas: <b>${nearest.options.value.toFixed(2)}</b><br>
+              Jarak: <b>${minDist.toFixed(1)} m</b>
+            </div>`
+          )
+          .openOn(map)
+      }
+    })
 
     // Pastikan layer hazard selalu di atas layer bangunan
     hazardLayer.current.setZIndex(1000)
