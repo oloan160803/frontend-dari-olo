@@ -30,7 +30,9 @@ export default function Home() {
             </h1>
             <div className="space-y-4">
               <p className="text-lg text-gray-300 font-[SF Pro]">
-                CardinAAL adalah platform yang dirancang untuk membantu menghitung kerugian tahunan rata-rata (AAL) dan kerugian langsung (Direct Loss) akibat bencana alam di Indonesia.
+                CardinAAL merupakan sebuah dashboard yang dirancang untuk membantu menghitung kerugian tahunan rata-rata (Average Annual Loss) 
+                dan kerugian langsung (Direct Loss) yang disebabkan oleh kejadian bencana alam berupa gempa bumi, banjir, tanah longsor, dan 
+                letusan gunung api di Indonesia.
               </p>
               <p className="text-lg text-gray-300 font-[SF Pro] italic">
                 "Menghitung kerugian tahunan guna menyusun strategi mitigasi bencana yang baik."
@@ -41,13 +43,13 @@ export default function Home() {
                 href="/calculation"
                 className="px-6 py-3 bg-[#1fdfc2] text-black rounded-full font-[SF Pro] hover:bg-[#A8D600] transition"
               >
-                Mulai Perhitungan
+                Lihat Kalkulasi
               </a>
               <a
                 href="/data"
                 className="px-6 py-3 border border-gray-500 text-gray-300 rounded-full font-[SF Pro] hover:border-white hover:text-white transition"
               >
-                Lihat Data
+                Manajemen Data
               </a>
             </div>
           </div>
@@ -59,16 +61,16 @@ export default function Home() {
 
             {/* Ikon sosial */}
             <div className="flex justify-center gap-6">
-              <a href="https://www.facebook.com/oloan.yesm/" className="hover:text-white transition" aria-label="Facebook">
+              <a href="" className="hover:text-white transition" aria-label="Facebook">
                 <Facebook size={24} />
               </a>
-              <a href="https://www.instagram.com/bintang_maull" className="hover:text-white transition" aria-label="Instagram">
+              <a href="" className="hover:text-white transition" aria-label="Instagram">
                 <Instagram size={24} />
               </a>
-              <a href="https://x.com/apparentlyrtten" className="hover:text-white transition" aria-label="Twitter">
+              <a href="" className="hover:text-white transition" aria-label="Twitter">
                 <Twitter size={24} />
               </a>
-              <a href="https://www.linkedin.com/in/celinedeandra" className="hover:text-white transition" aria-label="Website">
+              <a href="" className="hover:text-white transition" aria-label="Website">
                 <Globe size={24} />
               </a>
             </div>

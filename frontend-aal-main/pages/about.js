@@ -29,22 +29,22 @@ const supervisors = [
   {
     name: 'Prof. Dr. Irwan Meilano, S.T., M.Sc.',
     role: 'Dosen Pembimbing 1',
-    imageUrl: '/oloan.jpg',
+    imageUrl: '/pakimei.svg',
   },
   {
     name: 'Dr. Riantini Virtriana, S.T., M.T.',
     role: 'Dosen Pembimbing 2',
-    imageUrl: '/oloan.jpg',
+    imageUrl: '/burian.svg',
   },
   {
     name: 'Deni Suwardhi, S.T., M.T., Ph.D.',
     role: 'Dosen Pembimbing 2',
-    imageUrl: '/oloan.jpg',
+    imageUrl: '/pakdeni.svg',
   },
   {
     name: 'Dr.Techn. Nabila Sofia Eryan Putri S.T.,M.T.',
     role: 'Dosen Pembimbing 2',
-    imageUrl: '/oloan.jpg',
+    imageUrl: '/bunabila.svg',
   },
 ]
 
@@ -56,16 +56,18 @@ export default function About() {
       <main className="max-w-screen mx-auto py-10 px-6 space-y-12 mt-18">
         <div className="mx-auto max-w-7xl">
           {/* Intro */}
-          <div className="max-w-2xl mb-12">
+          <div className="w-full mb-12">
             <h1 className="text-4xl font-semibold text-[#ff6a00]">
               Capstone AAL
             </h1>
             <p className="mt-4 text-lg text-white text-justify">
               CardinAAL dikembangkan oleh tim yang terdiri dari mahasiswa Program Studi Teknik
-              Geodesi dan Geomatika 2021 untuk memenuhi SKS mata kuliah GD4201 Capstone Project.
-              Kami berkomitmen untuk membangun platform yang berguna dan mudah digunakan untuk
+              Geodesi dan Geomatika 2021 Institut Teknologi Bandung untuk memenuhi SKS mata kuliah GD4201 Capstone Project.
+              Selain itu, mahasiswa juga berkolaborasi dengan dosen pembimbing untuk membantu memberikan masukan dan arahan dalam pengembangan 
+              dashboard ini.
+              Kami berkomitmen untuk membangun dashboard yang berguna dan mudah digunakan untuk
               menghitung kerugian tahunan rata-rata (Average Annual Loss) dan kerugian langsung (Direct Loss)
-              akibat bencana alam di Indonesia.
+              akibat bencana alam yang disebabkan oleh gempa bumi, banjir, longsor, dan letusan gunung api di Indonesia.
             </p>
           </div>
 
@@ -93,7 +95,7 @@ export default function About() {
             </ul>
           </section>
 
-          {/* Dosen Pembimbing
+          {/*Dosen Pembimbing */}
           <section>
             <h2 className="text-3xl font-semibold text-[#ff6a00] mb-6 mt-18">
               Dosen Pembimbing
@@ -104,10 +106,10 @@ export default function About() {
                   <img
                     src={sup.imageUrl}
                     alt={sup.name}
-                    className="h-36 w-36 rounded-full object-cover"
+                    className="h-50 w-50 rounded-full object-cover"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold text-[#22D3EE]">
+                    <h3 className="text-lg font-semibold text-white">
                       {sup.name}
                     </h3>
                     <p className="text-lg text-[#ff6a00]">{sup.role}</p>
@@ -115,7 +117,7 @@ export default function About() {
                 </li>
               ))}
             </ul>
-          </section> */}
+          </section>
         </div>
       </main>
     </div>

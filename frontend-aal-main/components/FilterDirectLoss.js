@@ -46,7 +46,7 @@ export default function FilterDirectLoss({
           onChange={setSelectedProv}
           options={provList}
           placeholder="Pilih Provinsi"
-          className="w-64"
+          className="w-72"
         />
         <Select
           id="kotaSelect"

@@ -8,7 +8,7 @@ if (typeof window !== 'undefined') {
   require('leaflet/dist/leaflet.css')
 }
 
-const colors = ['#fcfdbf', '#fb8761', '#b6367a', '#50127b', '#000004']
+const colors = ['#ff0a0a', '#f2ce02', '#ebff0a', '#85e62c', '#209c05']
 
 // Fungsi Jenks Natural Breaks untuk membagi data ke n_classes
 function jenks(data, n_classes) {
@@ -139,13 +139,24 @@ export default function ChoroplethMap({ geojson, hazard, period, model }) {
       div.style.fontFamily = 'sans-serif'
       div.style.lineHeight = '1.5em'
       div.innerHTML = '<strong>Average Annual Loss (Rp)</strong><br/>'
-      grades.forEach((g, i) => {
-        if (i < grades.length - 1) {
-          div.innerHTML +=
-            `<i style="background:${colors[i]};width:18px;height:12px;display:inline-block;margin-right:6px;border:1px solid #ccc"></i>` +
-            ` ${fmtLegend(grades[i])} – ${fmtLegend(grades[i+1])}<br/>`
-        }
-      })
+      
+      // Tambahkan kelas pertama dengan "Kurang dari"
+      div.innerHTML +=
+        `<i style="background:${colors[0]};width:18px;height:12px;display:inline-block;margin-right:6px;border:1px solid #ccc"></i>` +
+        `Kurang dari ${fmtLegend(grades[1])}<br/>`
+      
+      // Tambahkan kelas menengah
+      for (let i = 1; i < grades.length - 2; i++) {
+        div.innerHTML +=
+          `<i style="background:${colors[i]};width:18px;height:12px;display:inline-block;margin-right:6px;border:1px solid #ccc"></i>` +
+          `${fmtLegend(grades[i])} – ${fmtLegend(grades[i+1])}<br/>`
+      }
+      
+      // Tambahkan kelas terakhir dengan "Lebih dari"
+      div.innerHTML +=
+        `<i style="background:${colors[colors.length-1]};width:18px;height:12px;display:inline-block;margin-right:6px;border:1px solid #ccc"></i>` +
+        `Lebih dari ${fmtLegend(grades[grades.length-2])}<br/>`
+      
       return div
     }
     legendRef.current.addTo(map)

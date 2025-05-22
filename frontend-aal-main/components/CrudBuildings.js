@@ -267,8 +267,7 @@ export default function CrudBuildings({
   const paginated = rows.slice((page - 1) * perPage, page * perPage)
 
   return (
-    <div className="bg-gray-800 p-4 -mx-4 rounded-2xl shadow flex flex-col h-[500px]">
-      <h2 className="text-xl font-bold mb-2 text-white">Manajemen Data Bangunan</h2>
+    <div className="bg-gray-800 p-5 -mx-4 rounded-2xl shadow flex flex-col h-[600px] -my-4">
       <div className="space-y-2">
         <div className="flex gap-2">
           <input
