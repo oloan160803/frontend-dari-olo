@@ -6,9 +6,27 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import 'leaflet.markercluster'
 
 const icons = {
-  BMN: L.icon({ iconUrl: 'icons/office-building-svgrepo-com.svg', iconSize: [20,20], iconAnchor:[6,20], popupAnchor:[0,-20] }),
-  FS:  L.icon({ iconUrl: 'icons/hospital-svgrepo-com.svg',      iconSize: [20,20], iconAnchor:[6,20], popupAnchor:[0,-20] }),
-  FD:  L.icon({ iconUrl: 'icons/school-sharp-svgrepo-com.svg',    iconSize: [20,20], iconAnchor:[6,20], popupAnchor:[0,-20] })
+  BMN: L.icon({ 
+    iconUrl: 'icons/gedungnegara.svg', 
+    iconSize: [20,20], 
+    iconAnchor:[6,20], 
+    popupAnchor:[0,-20],
+    className: 'rounded-icon'
+  }),
+  FS:  L.icon({ 
+    iconUrl: 'icons/kesehatan.svg',      
+    iconSize: [20,20], 
+    iconAnchor:[6,20], 
+    popupAnchor:[0,-20],
+    className: 'rounded-icon'
+  }),
+  FD:  L.icon({ 
+    iconUrl: 'icons/sekolah.svg',    
+    iconSize: [20,20], 
+    iconAnchor:[6,20], 
+    popupAnchor:[0,-20],
+    className: 'rounded-icon'
+  })
 }
 
 function getJenksBreaks(data, nClasses) {
@@ -85,7 +103,8 @@ export default function DirectLossMap({ geojson, filters, search }) {
     if (mapRef.current) return
     mapRef.current = L.map(mapEl.current, { zoomControl: false }).setView([-8.9,116.4],5)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      opacity: 0.5
     }).addTo(mapRef.current)
 
     clusterRef.current = L.markerClusterGroup({
@@ -142,6 +161,7 @@ export default function DirectLossMap({ geojson, filters, search }) {
             <div style="font-size:1.1rem; font-weight:700; color:#2563eb; margin-bottom:2px;">${p.nama_gedung}</div>
             <div style="font-size:0.95rem; color:#374151; margin-bottom:4px;">
               <span style="font-style:italic;">${p.taxonomy}</span> &bull; Luas: <b>${p.luas} m²</b><br/>
+              Jumlah Lantai: <b>${p.jumlah_lantai || '-'}</b><br/>
               <span style="color:#6b7280;">${p.alamat}</span><br/>
               <span style="font-size:0.9em; color:#6b7280;">${p.kota}, ${p.provinsi}</span>
             </div>
@@ -229,14 +249,6 @@ export default function DirectLossMap({ geojson, filters, search }) {
         return div
       }
 
-      function formatNumberWithUnit(value) {
-        if (value >= 1e12) return (value / 1e12).toFixed(2) + ' T'  // Triliun
-        if (value >= 1e9)  return (value / 1e9).toFixed(2) + ' M'   // Miliar
-        if (value >= 1e6)  return (value / 1e6).toFixed(2) + ' jt'  // Juta
-        if (value >= 1e3)  return (value / 1e3).toFixed(2) + ' rb'  // Ribu (optional)
-        return value.toString()
-      }
-
       const labels = [
         `Kurang dari Rp. ${formatNumberWithUnit(grades[1])}`,
         `Rp. ${formatNumberWithUnit(grades[1])} - Rp. ${formatNumberWithUnit(grades[2])}`,
@@ -247,6 +259,24 @@ export default function DirectLossMap({ geojson, filters, search }) {
       labels.forEach((label, i) => {
         html += `<i style="background:${colors[i]}; width:18px; height:12px; display:inline-block; margin-right:6px;"></i> ${label}<br>`
       })
+
+      // Tambahkan legenda ikon bangunan
+      html += '<hr style="margin:8px 0; border:none; border-top:1px solid #e5e7eb;"/>'
+      html += '<h4 class="text-black font-bold mb-1">Jenis Bangunan</h4>'
+      html += `
+        <div style="display:flex; align-items:center; margin-bottom:4px;">
+          <img src="icons/gedungnegara.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Bangunan Milik Negara</span>
+        </div>
+        <div style="display:flex; align-items:center; margin-bottom:4px;">
+          <img src="icons/kesehatan.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Fasilitas Kesehatan</span>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <img src="icons/sekolah.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Fasilitas Pendidikan</span>
+        </div>
+      `
 
       div.innerHTML = html
       div.style.background = '#ffffff'
@@ -267,6 +297,19 @@ export default function DirectLossMap({ geojson, filters, search }) {
 
   return (
     <div className="relative h-full">
+      <style>
+        {`
+          .rounded-icon {
+            border-radius: 50%;
+            background-color: white;
+            padding: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          .rounded-icon img {
+            border-radius: 50%;
+          }
+        `}
+      </style>
       <div ref={mapEl} className="h-full w-full rounded-lg" />
     </div>
   )

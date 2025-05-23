@@ -30,17 +30,18 @@ export default function Home() {
     <div className="min-h-screen bg-[#0D0F12]">
       <Header />
 
-      <main className="mx-auto py-10 px-6 space-y-6 mt-18 max-w-screen">
-        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
-          {/* Container baru untuk peta */}
-              <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Peta Model Bencana
-              </h2>
-              <div className="h-[480px] bg-gray-700 rounded-lg overflow-hidden">
-                {/* Tempat untuk model hazard */}
-              </div>
+      <main className="max-w-screen mx-auto py-10 px-6 space-y-6 mt-18">
+        {/* Peta Bencana */}
+        <section className="w-full">
+          <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
+            <h2 className="text-2xl font-semibold text-white mb-6 font-[SF Pro]">
+              Peta Bencana di Indonesia
+            </h2>
+            <div className="h-[480px] bg-gray-700 rounded-lg overflow-hidden">
             </div>
+            <div className="flex justify-end">
+            </div>
+          </div>
         </section>
 
         {/* Manajemen Data Bangunan */}

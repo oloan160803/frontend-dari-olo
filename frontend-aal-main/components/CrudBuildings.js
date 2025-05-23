@@ -268,6 +268,18 @@ export default function CrudBuildings({
 
   return (
     <div className="bg-gray-800 p-5 -mx-4 rounded-2xl shadow flex flex-col h-[600px] -my-4">
+      <h2 className="text-white  bg-gray-600 rounded-xl p-2 mb-3">Untuk mengunggah data bangunan, pastikan mengikuti template pengisian data dengan baik.
+        Silakan unduh terlebih dahulu.
+        <br />
+        <a
+      href="/sample_bangunan.csv"  // Ganti dengan path file CSV di public folder kamu
+      download="template_data_bangunan.csv"
+      className="inline-block mt-4 px-4 py-2 bg-[#22D3EE] text-black rounded-4xl hover:bg-[#3B82F6] hover:text-white transition"
+    >
+      Unduh Template CSV
+    </a>
+      </h2>
+
       <div className="space-y-2">
         <div className="flex gap-2">
           <input
@@ -317,7 +329,7 @@ export default function CrudBuildings({
           </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto mt-4">
+      <div className="flex-1 overflow-auto mt-4 h-[600px]">
         <table className="w-full text-sm">
           <thead className="bg-gray-800 text-white sticky top-0">
             <tr>
