@@ -146,6 +146,13 @@ function MiniMap({ lat, lon, onLatLonChange, kode_bangunan }) {
   )
 }
 
+// Tambahkan fungsi konversi nama ke kode
+const buildingNameToCode = {
+  'Fasilitas Kesehatan': 'FS',
+  'Fasilitas Pendidikan': 'FD',
+  'Bangunan Milik Negara': 'BMN'
+}
+
 export default function CrudBuildings({
   provFilter,
   setProvFilter,
@@ -235,13 +242,20 @@ export default function CrudBuildings({
   async function onAdd(data) {
     setIsSavingAdd(true)
     try {
-      const { id_bangunan } = await getNewBuildingId(data.kode_bangunan)
+      const buildingCode = buildingNameToCode[data.kode_bangunan]
+      if (!buildingCode) {
+        throw new Error('Kode bangunan tidak valid')
+      }
+      const { id_bangunan } = await getNewBuildingId(buildingCode)
       await addBuilding({ ...data, id_bangunan })
       await recalc(id_bangunan)
+      setProvFilter(data.provinsi)
+      setKotaFilter(data.kota)
       await refreshTable()
       setModalMode('')
     } catch (e) {
       console.error(e)
+      alert('Gagal menambah bangunan: ' + e.message)
     } finally {
       setIsSavingAdd(false)
     }
@@ -506,7 +520,7 @@ function AddForm({ provList, onSave, isSavingAdd }) {
       <MiniMap lat={parseFloat(data.lat)} lon={parseFloat(data.lon)} onLatLonChange={handleLatLonChange} kode_bangunan={data.kode_bangunan} />
       <Select
         id="addKodeBangunan"
-        options={['BMN','FS','FD']}
+        options={['Bangunan Milik Negara','Fasilitas Kesehatan','Fasilitas Pendidikan']}
         value={data.kode_bangunan}
         onChange={v => setData(d => ({ ...d, kode_bangunan: v }))}
         className="w-full mb-2"
