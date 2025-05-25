@@ -124,7 +124,35 @@ export default function ChoroplethMap({ geojson, hazard, period, model }) {
         const props = feature.properties
         const prov = props.provinsi || props.nama_provinsi || 'Unknown'
         const val = props[metric] || 0
-        layer.bindPopup(`<strong>${prov}</strong><br/>AAL: ${fmtPopup(val)}`)
+        // Remove the default click popup
+        // layer.bindPopup(`<strong>${prov}</strong><br/>AAL: ${fmtPopup(val)}`)
+
+        // Add hover events
+        layer.on({
+          mouseover: (e) => {
+            const layer = e.target;
+            layer.setStyle({
+              weight: 2,
+              color: '#666',
+              dashArray: '',
+              fillOpacity: 0.8
+            });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+              layer.bringToFront();
+            }
+            // Open popup on hover
+            L.popup()
+              .setLatLng(layer.getBounds().getCenter())
+              .setContent(`<strong>${prov}</strong><br/>AAL: ${fmtPopup(val)}`)
+              .openOn(map);
+          },
+          mouseout: (e) => {
+            // Reset style on mouseout
+            layerRef.current.resetStyle(e.target);
+            // Close popup on mouseout
+            map.closePopup();
+          },
+        });
       }
     }).addTo(map)
 
