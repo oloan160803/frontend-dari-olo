@@ -270,7 +270,7 @@ export default function PetaBencana() {
             value={selectedIntensitas}
             onChange={setSelectedIntensitas}
             options={selectedBencana ? intensitasOptions[selectedBencana] : []}
-            placeholder="Pilih Intensitas"
+            placeholder="Pilih Return Period"
             disabled={!selectedBencana}
             className={!selectedBencana ? ' cursor-not-allowed' : ''}
           />

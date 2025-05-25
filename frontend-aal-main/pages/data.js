@@ -33,13 +33,6 @@ export default function Home() {
       <Header />
 
       <main className="max-w-screen mx-auto py-10 px-6 space-y-6 mt-18">
-        {/* Peta Bencana */}
-        <section className="w-full">
-          <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
-            <PetaBencana />
-          </div>
-        </section>
-
         {/* Manajemen Data Bangunan */}
         <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
           <h2 className="text-2xl font-bold text-white mb-6">Manajemen Data Bangunan</h2>
@@ -51,16 +44,23 @@ export default function Home() {
           />
         </section>
 
-        {/* Kurva Kerentanan */}
-        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
-          <h2 className="text-2xl font-bold text-white mb-6">Kurva Kerentanan</h2>
-          <DisasterCurves />
-        </section>
-
         {/* HSBGN */}
         <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600 md:w-1/2 center mx-auto">
           <h2 className="text-2xl font-bold text-white mb-6">Manajemen Harga Satuan Bangunan Gedung Negara</h2>
           <CrudHSBGN />
+        </section>
+
+        {/* Peta Bencana */}
+        <section className="w-full">
+          <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
+            <PetaBencana />
+          </div>
+        </section>
+
+        {/* Kurva Kerentanan */}
+        <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600">
+          <h2 className="text-2xl font-bold text-white mb-6">Kurva Kerentanan</h2>
+          <DisasterCurves />
         </section>
       </main>
     </div>
