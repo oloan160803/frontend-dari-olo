@@ -86,7 +86,7 @@ export default function Calculation() {
         {/* AAL Charts */}
         <section className="bg-[#1E2023] rounded-lg shadow-xs p-6 shadow-gray-600">
           <h2 className="text-2xl font-semibold px-4 text-gray-100 mb-0.5 font-[SF Pro]">
-            Grafik Average Annual Loss Provinsi
+            Diagram Batang Average Annual Loss Provinsi
           </h2>
           <ChartsSection provs={provs} data={data} load={load} />
         </section>

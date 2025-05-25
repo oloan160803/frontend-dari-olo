@@ -9,11 +9,12 @@ import useDirectLoss  from '../hooks/useDirectLoss'
 // Components
 import Header           from '../components/Header'
 import CrudHSBGN        from '../components/CrudHSBGN'
+import FilterPetaBencana from '../components/FilterPetaBencana'
 
 // Dynamic Imports
 const HazardMap     = dynamic(() => import('../components/HazardMap'), { ssr: false })
 const DisasterCurves = dynamic(() => import('../components/DisasterCurves'), { ssr: false })
-
+const PetaBencana = dynamic(() => import('../components/PetaBencana'), { ssr: false })
 
 export default function Home() {
   // Charts state
@@ -25,6 +26,7 @@ export default function Home() {
   // Lifted filters for buildings
   const [selectedProv, setSelectedProv] = useState('')
   const [selectedKota, setSelectedKota] = useState('')
+  const [layer, setLayer] = useState('hazard_gempa_mmi_500')
 
   return (
     <div className="min-h-screen bg-[#0D0F12]">
@@ -34,13 +36,7 @@ export default function Home() {
         {/* Peta Bencana */}
         <section className="w-full">
           <div className="bg-[#1E2023] shadow-xs rounded-lg p-6 flex flex-col space-y-4 md:col-span-2 shadow-gray-600">
-            <h2 className="text-2xl font-semibold text-white mb-6 font-[SF Pro]">
-              Peta Bencana di Indonesia
-            </h2>
-            <div className="h-[480px] bg-gray-700 rounded-lg overflow-hidden">
-            </div>
-            <div className="flex justify-end">
-            </div>
+            <PetaBencana />
           </div>
         </section>
 
@@ -64,8 +60,7 @@ export default function Home() {
         {/* HSBGN */}
         <section className="bg-[#1E2023] rounded-xl p-6 shadow-xs shadow-gray-600 md:w-1/2 center mx-auto">
           <h2 className="text-2xl font-bold text-white mb-6">Manajemen Harga Satuan Bangunan Gedung Negara</h2>
-              <CrudHSBGN />
-            {/* NOTE: CrudBuildings sudah dipindahkan ke panel Peta Model Bencana */}
+          <CrudHSBGN />
         </section>
       </main>
     </div>

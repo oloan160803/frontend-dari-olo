@@ -104,7 +104,7 @@ export default function DirectLossMap({ geojson, filters, search }) {
     mapRef.current = L.map(mapEl.current, { zoomControl: false }).setView([-8.9,116.4],5)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
-      opacity: 0.5
+      opacity: 0.7
     }).addTo(mapRef.current)
 
     clusterRef.current = L.markerClusterGroup({

@@ -44,33 +44,68 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
 
   useEffect(() => {
     if (mapRef.current) return
-    const map = L.map(mapEl.current).setView([-6.2,106.8],9)
+    const map = L.map(mapEl.current, { zoomControl: false }).setView([-6.2,106.8],9)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution: '© OpenStreetMap contributors',
-      opacity: 0.5,
+      opacity: 0.7,
     }).addTo(map)
     mapRef.current = map
+
+    // Tambahkan legenda jenis bangunan
+    const legend = L.control({ position: 'bottomright' })
+    legend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'info legend')
+      div.style.background = '#ffffff'
+      div.style.padding = '6px 12px'
+      div.style.borderRadius = '6px'
+      div.style.color = 'black'
+      div.style.opacity = '0.8'
+      div.style.fontSize = '0.8rem'
+      
+      let html = '<h4 class="text-black font-bold mb-1">Jenis Bangunan</h4>'
+      html += `
+        <div style="display:flex; align-items:center; margin-bottom:4px;">
+          <img src="icons/gedungnegara.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Bangunan Milik Negara</span>
+        </div>
+        <div style="display:flex; align-items:center; margin-bottom:4px;">
+          <img src="icons/kesehatan.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Fasilitas Kesehatan</span>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <img src="icons/sekolah.svg" style="width:20px; height:20px; margin-right:6px; background:white; padding:2px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.2);"/>
+          <span>Fasilitas Pendidikan</span>
+        </div>
+      `
+      div.innerHTML = html
+      return div
+    }
+    legend.addTo(map)
 
     buildingCluster.current = L.markerClusterGroup({
       maxClusterRadius: 60,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       chunkedLoading: true,
-      chunkInterval: 200,
+      chunkInterval: 100,
       disableClusteringAtZoom: 18,
+      zoomToBoundsOnClick: true,
+      removeOutsideVisibleBounds: true,
+      animateAddingMarkers: false,
+      spiderfyDistanceMultiplier: 1,
     })
     map.addLayer(buildingCluster.current)
+
+    // Set batas zoom maksimum untuk peta
+    map.setMaxZoom(19)
   }, [])
 
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || !buildingCluster.current) return
     const map = mapRef.current
     const cluster = buildingCluster.current
 
     cluster.clearLayers()
-    markers.current.forEach(m => {
-      if (map.hasLayer(m)) map.removeLayer(m)
-    })
     markers.current = []
 
     if (!provinsi || !kota) return
@@ -78,44 +113,53 @@ export default function HazardMap({ provinsi, kota, setProvinsi, setKota }) {
     fetch(`/api/gedung?provinsi=${encodeURIComponent(provinsi)}&kota=${encodeURIComponent(kota)}`)
       .then(r => r.json())
       .then(data => {
-        data.features.forEach(f => {
+        const markersList = data.features.map(f => {
           const [lon, lat] = f.geometry.coordinates
           const type = (f.properties.id_bangunan || '').split('_')[0]
-          const marker = L.marker([lat, lon], { icon: icons[type] || icons.FD })
-          marker.bindPopup(`<strong>${f.properties.nama_gedung}</strong>`)
-          markers.current.push(marker)
-        })
-
-        function updateMarkers() {
-          const zoom = map.getZoom()
-          cluster.clearLayers()
-          markers.current.forEach(m => {
-            if (map.hasLayer(m)) map.removeLayer(m)
+          const marker = L.marker([lat, lon], {
+            icon: icons[type] || icons.FD,
+            riseOnHover: true
           })
-
-          if (zoom >= 13) {
-            markers.current.forEach(m => {
-              m.addTo(map)
-            })
-          } else {
-            markers.current.forEach(m => {
-              cluster.addLayer(m)
-            })
-            if (!map.hasLayer(cluster)) {
-              map.addLayer(cluster)
+          
+          marker.on('click', () => {
+            if (!marker.getPopup()) {
+              const popupContent = `
+                <div style="min-width:200px">
+                  <strong>${f.properties.nama_gedung}</strong><br/>
+                  <small>${f.properties.alamat}</small>
+                </div>
+              `
+              marker.bindPopup(popupContent)
             }
+          })
+          return marker
+        })
+        
+        markers.current = markersList
+        cluster.addLayers(markers.current)
+
+        cluster.refreshClusters()
+
+        setTimeout(() => {
+          const bounds = cluster.getBounds()
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, {
+              padding: [50, 50],
+              maxZoom: 14
+            })
           }
-        }
+        }, 50)
 
-        updateMarkers()
-        map.on('zoomend', updateMarkers)
-
-        const bounds = L.latLngBounds(markers.current.map(m => m.getLatLng()))
-        if (bounds.isValid()) map.fitBounds(bounds)
+      })
+      .catch(error => {
+        console.error("Error fetching building data:", error)
       })
 
     return () => {
-      if (map) map.off('zoomend')
+      if (buildingCluster.current) {
+        buildingCluster.current.clearLayers()
+      }
+      markers.current = []
     }
   }, [provinsi, kota])
 

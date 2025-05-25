@@ -18,26 +18,29 @@ import {
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Definisi ikon untuk tiap tipe bangunan (copy dari HazardMap.js)
+// Definisi ikon untuk tiap tipe bangunan (disinkronkan dengan HazardMap.js)
 const icons = {
   BMN: L.icon({
-    iconUrl: '/icons/office-building-svgrepo-com.svg',
+    iconUrl: 'icons/gedungnegara.svg',
     iconSize: [20,20],
     iconAnchor: [6,20],
-    popupAnchor: [0,-20]
+    popupAnchor: [0,-20],
+    className: 'rounded-icon'
   }),
   FS: L.icon({
-    iconUrl: '/icons/hospital-svgrepo-com.svg',
+    iconUrl: 'icons/kesehatan.svg',
     iconSize: [20,20],
     iconAnchor: [6,20],
-    popupAnchor: [0,-20]
+    popupAnchor: [0,-20],
+    className: 'rounded-icon'
   }),
   FD: L.icon({
-    iconUrl: '/icons/school-sharp-svgrepo-com.svg',
+    iconUrl: 'icons/sekolah.svg',
     iconSize: [20,20],
     iconAnchor: [6,20],
-    popupAnchor: [0,-20]
-  })
+    popupAnchor: [0,-20],
+    className: 'rounded-icon'
+  }),
 }
 
 function LoadingSpinner() {
