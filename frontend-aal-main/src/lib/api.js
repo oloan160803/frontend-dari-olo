@@ -148,3 +148,15 @@ async function fetchJSON(path, opts = {}) {
   export function getDisasterCurves() {
     return fetchJSON('/api/disaster-curves')
   }
+
+
+  /**
+ * Recalculate directloss & AAL hanya untuk satu kota.
+ * Memanggil POST /api/recalc-by-kota?kota=…
+ */
+  export function recalcByKota(kota) {
+    return fetchJSON(
+      `/api/recalc-by-kota?kota=${encodeURIComponent(kota)}`,
+      { method: 'POST' }
+    )
+  }

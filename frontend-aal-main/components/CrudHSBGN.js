@@ -1,12 +1,11 @@
-// components/CrudHSBGN.js
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Modal from './ui/Modal'
 import Button from './ui/Button'
 import {
   getProvinsi,
   getHSBGN,
   updateHSBGN,
-  recalcAll   // global recalculation endpoint
+  recalcByKota
 } from '../src/lib/api'
 
 export default function CrudHSBGN() {
@@ -17,7 +16,6 @@ export default function CrudHSBGN() {
   const [editing, setEditing] = useState(null)
   const [newValue, setNewValue] = useState('')
 
-  // **Loading state** untuk tombol Simpan
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -40,24 +38,23 @@ export default function CrudHSBGN() {
     setNewValue(row.hsbgn)
   }
 
-  async function onSave() {
-    setIsSaving(true)       // mulai loading
+  const onSave = useCallback(async () => {
+    if (isSaving) {
+      console.log("Duplicate submit prevented")
+      return
+    }
+    setIsSaving(true)
     try {
       await updateHSBGN(editing.id_kota, parseFloat(newValue))
-      window.alert('Database berhasil diperbarui')
-
-      await recalcAll()
-      window.alert('Perhitungan selesai')
-
       reloadTable()
       setEditing(null)
     } catch (err) {
       console.error(err)
       alert('Gagal menyimpan perubahan')
     } finally {
-      setIsSaving(false)    // berhenti loading
+      setIsSaving(false)
     }
-  }
+  }, [editing, newValue, isSaving])
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow flex flex-col gap-4">
@@ -117,7 +114,13 @@ export default function CrudHSBGN() {
       {/* Edit Modal */}
       <Modal isOpen={!!editing} onClose={() => setEditing(null)}>
         <h3 className="text-lg font-bold mb-4">Edit HSBGN</h3>
-        <form onSubmit={e => { e.preventDefault(); onSave() }} className="flex flex-col gap-4">
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            onSave()
+          }}
+          className="flex flex-col gap-4"
+        >
           <div>
             <label className="text-sm font-semibold">Kota</label>
             <input
@@ -155,36 +158,38 @@ export default function CrudHSBGN() {
             >
               Batal
             </Button>
-              <Button
-                type="submit"
-                disabled={isSaving}
-                className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isSaving && (
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                )}
-                {isSaving ? 'Menyimpan…' : 'Simpan Perubahan'}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center ${
+                isSaving ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isSaving && (
+                <svg
+                  className="animate-spin h-5 w-5 mr-2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+              )}
+              {isSaving ? 'Menyimpan…' : 'Simpan Perubahan'}
+            </Button>
+          </div>
         </form>
       </Modal>
     </div>
