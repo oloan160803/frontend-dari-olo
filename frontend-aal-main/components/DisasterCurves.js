@@ -43,10 +43,10 @@ export default function DisasterCurves() {
   };
 
   const disasters = [
-    { key: 'gempa',        label: 'Gempa' },
-    { key: 'banjir',       label: 'Banjir' },
-    { key: 'gunungberapi', label: 'Gunung Berapi' },
-    { key: 'longsor',      label: 'Longsor' }
+    { key: 'gempa',        label: 'Gempa', xAxisLabel: 'Intensitas Bencana (MMI)' },
+    { key: 'banjir',       label: 'Banjir', xAxisLabel: 'Kedalaman Banjir (m)' },
+    { key: 'gunungberapi', label: 'Gunung Berapi', xAxisLabel: 'Intensitas Bencana (kPa)' },
+    { key: 'longsor',      label: 'Longsor', xAxisLabel: 'Intensitas Bencana (Momentum Flux)' }
   ]
 
   return (

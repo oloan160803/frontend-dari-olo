@@ -23,13 +23,13 @@ const intensitasOptions = {
     { value: 'hazard_banjir_depth_100', label: 'Depth 100' }
   ],
   longsor: [
-    { value: 'hazard_longsor_mflux_2', label: 'LMFlux 2' },
-    { value: 'hazard_longsor_mflux_5', label: 'LMFlux 5' }
+    { value: 'hazard_longsor_mflux_2', label: 'Momentum Flux 2' },
+    { value: 'hazard_longsor_mflux_5', label: 'Momentum Flux 5' }
   ],
   gunung: [
-    { value: 'hazard_gunungberapi_kpa_50', label: 'KPA 50' },
-    { value: 'hazard_gunungberapi_kpa_100', label: 'KPA 100' },
-    { value: 'hazard_gunungberapi_kpa_250', label: 'KPA 250' }
+    { value: 'hazard_gunungberapi_kpa_50', label: 'kPa 50' },
+    { value: 'hazard_gunungberapi_kpa_100', label: 'kPa 100' },
+    { value: 'hazard_gunungberapi_kpa_250', label: 'kPa 250' }
   ]
 }
 
@@ -112,16 +112,16 @@ const legendStyles = {
     { color: "#ff0000", label: '0.00 - 0.00' },
   ],
    'hazard_gunungberapi_kpa_100': [
-    { color: "#004d00", label: '0' }, // Assuming 0 is a specific entry
-    { color: "#006400", label: '0.00 - 0.11' }, // Example ranges, ADJUST THESE
+    { color: "#004d00", label: '0' }, 
+    { color: "#006400", label: '0.00 - 0.11' }, 
     { color: "#66cc00", label: '0.11 - 0.49' },
     { color: "#edd16d", label: '0.49 - 1.16' },
     { color: "#cc6600", label: '1.16 - 2.10' },
     { color: "#ff0000", label: '2.10 - 3.19' },
   ],
    'hazard_gunungberapi_kpa_250': [
-    { color: "#004d00", label: '0' }, // Assuming 0 is a specific entry
-    { color: "#006400", label: '0.00 - 0.61' }, // Example ranges, ADJUST THESE
+    { color: "#004d00", label: '0' }, 
+    { color: "#006400", label: '0.00 - 0.61' }, 
     { color: "#66cc00", label: '0.61 - 1.94' },
     { color: "#edd16d", label: '1.94 - 3.89' },
     { color: "#cc6600", label: '3.89 - 6.47' },
